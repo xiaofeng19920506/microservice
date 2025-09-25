@@ -240,6 +240,9 @@ build/
 dist/
 lib/
 
+# TypeScript
+*.tsbuildinfo
+
 # PM2
 .pm2/
 

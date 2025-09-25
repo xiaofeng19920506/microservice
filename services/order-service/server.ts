@@ -1,11 +1,36 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { IApiResponse } from '../../types';
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.ORDER_SERVICE_PORT || 3003;
+const PORT = parseInt(process.env.ORDER_SERVICE_PORT || '3003');
+
+// Order and Payment interfaces
+interface IOrderItem {
+  productId: number;
+  quantity: number;
+  price: number;
+}
+
+interface IOrder {
+  id: number;
+  userId: number;
+  items: IOrderItem[];
+  total: number;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'completed';
+  createdAt: string;
+}
+
+interface IPayment {
+  id: number;
+  orderId: number;
+  amount: number;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  method: string;
+}
 
 // Middleware
 app.use(helmet());
@@ -15,7 +40,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Mock order data
-const orders = [
+const orders: IOrder[] = [
   { 
     id: 1, 
     userId: 1, 
@@ -34,13 +59,13 @@ const orders = [
   }
 ];
 
-const payments = [
+const payments: IPayment[] = [
   { id: 1, orderId: 1, amount: 1999.98, status: 'pending', method: 'credit_card' },
   { id: 2, orderId: 2, amount: 699.99, status: 'completed', method: 'paypal' }
 ];
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
     service: 'Order Service',
@@ -50,13 +75,13 @@ app.get('/health', (req, res) => {
 });
 
 // Get all orders
-app.get('/api/orders', (req, res) => {
+app.get('/api/orders', (req: Request, res: Response) => {
   const { userId, status } = req.query;
   let filteredOrders = [...orders];
   
   // Filter by user ID
   if (userId) {
-    filteredOrders = filteredOrders.filter(o => o.userId === parseInt(userId));
+    filteredOrders = filteredOrders.filter(o => o.userId === parseInt(userId as string));
   }
   
   // Filter by status
@@ -64,15 +89,16 @@ app.get('/api/orders', (req, res) => {
     filteredOrders = filteredOrders.filter(o => o.status === status);
   }
   
-  res.json({
+  const response: IApiResponse<IOrder[]> = {
     success: true,
     data: filteredOrders,
     count: filteredOrders.length
-  });
+  };
+  res.json(response);
 });
 
 // Get order by ID
-app.get('/api/orders/:id', (req, res) => {
+app.get('/api/orders/:id', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.id);
   const order = orders.find(o => o.id === orderId);
   
@@ -83,14 +109,15 @@ app.get('/api/orders/:id', (req, res) => {
     });
   }
   
-  res.json({
+  const response: IApiResponse<IOrder> = {
     success: true,
     data: order
-  });
+  };
+  res.json(response);
 });
 
 // Create new order
-app.post('/api/orders', (req, res) => {
+app.post('/api/orders', (req: Request, res: Response) => {
   const { userId, items } = req.body;
   
   if (!userId || !items || !Array.isArray(items) || items.length === 0) {
@@ -101,9 +128,9 @@ app.post('/api/orders', (req, res) => {
   }
   
   // Calculate total
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const total = items.reduce((sum: number, item: IOrderItem) => sum + (item.price * item.quantity), 0);
   
-  const newOrder = {
+  const newOrder: IOrder = {
     id: orders.length + 1,
     userId: parseInt(userId),
     items,
@@ -114,15 +141,17 @@ app.post('/api/orders', (req, res) => {
   
   orders.push(newOrder);
   
-  res.status(201).json({
+  const response: IApiResponse<IOrder> = {
     success: true,
     data: newOrder,
     message: 'Order created successfully'
-  });
+  };
+  
+  res.status(201).json(response);
 });
 
 // Update order status
-app.put('/api/orders/:id/status', (req, res) => {
+app.put('/api/orders/:id/status', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.id);
   const { status } = req.body;
   
@@ -142,17 +171,18 @@ app.put('/api/orders/:id/status', (req, res) => {
     });
   }
   
-  orders[orderIndex].status = status;
+  orders[orderIndex].status = status as IOrder['status'];
   
-  res.json({
+  const response: IApiResponse<IOrder> = {
     success: true,
     data: orders[orderIndex],
     message: 'Order status updated successfully'
-  });
+  };
+  res.json(response);
 });
 
 // Delete order
-app.delete('/api/orders/:id', (req, res) => {
+app.delete('/api/orders/:id', (req: Request, res: Response) => {
   const orderId = parseInt(req.params.id);
   const orderIndex = orders.findIndex(o => o.id === orderId);
   
@@ -165,20 +195,21 @@ app.delete('/api/orders/:id', (req, res) => {
   
   orders.splice(orderIndex, 1);
   
-  res.json({
+  const response: IApiResponse = {
     success: true,
     message: 'Order deleted successfully'
-  });
+  };
+  res.json(response);
 });
 
 // Payment endpoints
-app.get('/api/payments', (req, res) => {
+app.get('/api/payments', (req: Request, res: Response) => {
   const { orderId, status } = req.query;
   let filteredPayments = [...payments];
   
   // Filter by order ID
   if (orderId) {
-    filteredPayments = filteredPayments.filter(p => p.orderId === parseInt(orderId));
+    filteredPayments = filteredPayments.filter(p => p.orderId === parseInt(orderId as string));
   }
   
   // Filter by status
@@ -186,14 +217,15 @@ app.get('/api/payments', (req, res) => {
     filteredPayments = filteredPayments.filter(p => p.status === status);
   }
   
-  res.json({
+  const response: IApiResponse<IPayment[]> = {
     success: true,
     data: filteredPayments,
     count: filteredPayments.length
-  });
+  };
+  res.json(response);
 });
 
-app.get('/api/payments/:id', (req, res) => {
+app.get('/api/payments/:id', (req: Request, res: Response) => {
   const paymentId = parseInt(req.params.id);
   const payment = payments.find(p => p.id === paymentId);
   
@@ -204,13 +236,14 @@ app.get('/api/payments/:id', (req, res) => {
     });
   }
   
-  res.json({
+  const response: IApiResponse<IPayment> = {
     success: true,
     data: payment
-  });
+  };
+  res.json(response);
 });
 
-app.post('/api/payments', (req, res) => {
+app.post('/api/payments', (req: Request, res: Response) => {
   const { orderId, amount, method } = req.body;
   
   if (!orderId || !amount || !method) {
@@ -229,7 +262,7 @@ app.post('/api/payments', (req, res) => {
     });
   }
   
-  const newPayment = {
+  const newPayment: IPayment = {
     id: payments.length + 1,
     orderId: parseInt(orderId),
     amount: parseFloat(amount),
@@ -239,14 +272,16 @@ app.post('/api/payments', (req, res) => {
   
   payments.push(newPayment);
   
-  res.status(201).json({
+  const response: IApiResponse<IPayment> = {
     success: true,
     data: newPayment,
     message: 'Payment created successfully'
-  });
+  };
+  
+  res.status(201).json(response);
 });
 
-app.put('/api/payments/:id/status', (req, res) => {
+app.put('/api/payments/:id/status', (req: Request, res: Response) => {
   const paymentId = parseInt(req.params.id);
   const { status } = req.body;
   
@@ -266,17 +301,18 @@ app.put('/api/payments/:id/status', (req, res) => {
     });
   }
   
-  payments[paymentIndex].status = status;
+  payments[paymentIndex].status = status as IPayment['status'];
   
-  res.json({
+  const response: IApiResponse<IPayment> = {
     success: true,
     data: payments[paymentIndex],
     message: 'Payment status updated successfully'
-  });
+  };
+  res.json(response);
 });
 
 // Error handling
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Order Service Error:', err);
   res.status(500).json({
     success: false,
@@ -285,7 +321,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
@@ -297,4 +333,4 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });
 
-module.exports = app;
+export default app;

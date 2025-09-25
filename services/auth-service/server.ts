@@ -1,13 +1,14 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const rateLimit = require('express-rate-limit');
-const connectDB = require('./config/database');
-const User = require('./models/User');
-const Staff = require('./models/Staff');
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
+import connectDB from './config/database';
+import User from './models/User';
+import Staff from './models/Staff';
+import { IAuthRequest, IRegisterRequest, ILoginResponse, IRegisterResponse, IApiResponse, IJWTPayload } from '../../types';
 require('dotenv').config();
 
 const app = express();
@@ -32,10 +33,10 @@ const authLimiter = rateLimit({
 connectDB();
 
 // Refresh tokens storage (in production, use Redis)
-const refreshTokens = new Map();
+const refreshTokens = new Map<string, string>();
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
     service: 'Auth Service',
@@ -45,21 +46,22 @@ app.get('/health', (req, res) => {
 });
 
 // Generate JWT tokens
-const generateTokens = (user) => {
-  const payload = {
-    id: user.id,
+const generateTokens = (user: any): { accessToken: string; refreshToken: string } => {
+  const payload: IJWTPayload = {
+    id: user._id.toString(),
     email: user.email,
-    name: user.name,
+    firstName: user.firstName,
+    lastName: user.lastName,
     role: user.role,
-    userType: user.userType,
+    userType: user.userType || (user.workingStore ? 'staff' : 'customer'),
     permissions: user.permissions || []
   };
 
-  const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+  const accessToken = jwt.sign(payload, process.env.JWT_SECRET!, {
     expiresIn: '15m'
   });
 
-  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
+  const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET!, {
     expiresIn: '7d'
   });
 
@@ -67,15 +69,15 @@ const generateTokens = (user) => {
 };
 
 // Register new user (regular or staff based on isAdmin flag)
-app.post('/api/auth/register', authLimiter, async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req: Request, res: Response) => {
   try {
-    const { name, email, password, role, department, position, permissions = [], isAdmin = false } = req.body;
+    const { firstName, lastName, email, password, role, workingStore, managedStore, ownedStore, permissions = [], isAdmin = false }: IRegisterRequest = req.body;
 
     // Validation
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Name, email, and password are required'
+        message: 'First name, last name, email, and password are required'
       });
     }
 
@@ -88,10 +90,10 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
     // Additional validation for staff registration
     if (isAdmin) {
-      if (!role || !department || !position) {
+      if (!role || !workingStore || workingStore.length === 0) {
         return res.status(400).json({
           success: false,
-          message: 'Role, department, and position are required for staff registration'
+          message: 'Role and at least one working store are required for staff registration'
         });
       }
     }
@@ -114,12 +116,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
     if (isAdmin) {
       // Create new staff member
       const newStaff = new Staff({
-        name,
+        firstName,
+        lastName,
         email,
         password: hashedPassword,
         role: role || 'employee',
-        department,
-        position,
+        workingStore: workingStore || [],
+        managedStore: managedStore || [],
+        ownedStore: ownedStore || [],
         permissions
       });
 
@@ -129,7 +133,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       const { accessToken, refreshToken } = generateTokens(newStaff);
       refreshTokens.set(refreshToken, newStaff._id.toString());
 
-      res.status(201).json({
+      const response: IRegisterResponse = {
         success: true,
         data: {
           staff: newStaff.toJSON(),
@@ -137,11 +141,14 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
           refreshToken
         },
         message: 'Staff member registered successfully'
-      });
+      };
+
+      res.status(201).json(response);
     } else {
       // Create new regular user
       const newUser = new User({
-        name,
+        firstName,
+        lastName,
         email,
         password: hashedPassword
       });
@@ -152,7 +159,7 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
       const { accessToken, refreshToken } = generateTokens(newUser);
       refreshTokens.set(refreshToken, newUser._id.toString());
 
-      res.status(201).json({
+      const response: IRegisterResponse = {
         success: true,
         data: {
           user: newUser.toJSON(),
@@ -160,7 +167,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
           refreshToken
         },
         message: 'User registered successfully'
-      });
+      };
+
+      res.status(201).json(response);
     }
   } catch (error) {
     console.error('Registration error:', error);
@@ -172,9 +181,9 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 });
 
 // Login user (regular or staff based on isAdmin flag)
-app.post('/api/auth/login', authLimiter, async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req: Request, res: Response) => {
   try {
-    const { email, password, isAdmin = false } = req.body;
+    const { email, password, isAdmin = false }: IAuthRequest = req.body;
 
     // Validation
     if (!email || !password) {
@@ -214,7 +223,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user);
     refreshTokens.set(refreshToken, user._id.toString());
 
-    res.json({
+    const response: ILoginResponse = {
       success: true,
       data: {
         user: user.toJSON(),
@@ -222,7 +231,9 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
         refreshToken
       },
       message: 'Login successful'
-    });
+    };
+
+    res.json(response);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
@@ -233,7 +244,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 });
 
 // Refresh access token
-app.post('/api/auth/refresh', async (req, res) => {
+app.post('/api/auth/refresh', async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
 
@@ -245,7 +256,7 @@ app.post('/api/auth/refresh', async (req, res) => {
     }
 
     // Verify refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as IJWTPayload;
     const userId = refreshTokens.get(refreshToken);
 
     if (!userId || userId !== decoded.id) {
@@ -256,9 +267,9 @@ app.post('/api/auth/refresh', async (req, res) => {
     }
 
     // Find user in both collections
-    let user = await User.findOne({ _id: userId, isActive: true });
+    let user = await User.findOne({ _id: decoded.id, isActive: true });
     if (!user) {
-      user = await Staff.findOne({ _id: userId, isActive: true });
+      user = await Staff.findOne({ _id: decoded.id, isActive: true });
     }
     
     if (!user) {
@@ -273,7 +284,7 @@ app.post('/api/auth/refresh', async (req, res) => {
     
     // Remove old refresh token and add new one
     refreshTokens.delete(refreshToken);
-    refreshTokens.set(newRefreshToken, user.id);
+    refreshTokens.set(newRefreshToken, user._id.toString());
 
     res.json({
       success: true,
@@ -293,7 +304,7 @@ app.post('/api/auth/refresh', async (req, res) => {
 });
 
 // Logout user
-app.post('/api/auth/logout', async (req, res) => {
+app.post('/api/auth/logout', async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
 
@@ -315,7 +326,7 @@ app.post('/api/auth/logout', async (req, res) => {
 });
 
 // Verify token endpoint
-app.post('/api/auth/verify', async (req, res) => {
+app.post('/api/auth/verify', async (req: Request, res: Response) => {
   try {
     const { token } = req.body;
 
@@ -327,7 +338,7 @@ app.post('/api/auth/verify', async (req, res) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IJWTPayload;
     
     // Find user in both collections
     let user = await User.findOne({ _id: decoded.id, isActive: true });
@@ -358,10 +369,8 @@ app.post('/api/auth/verify', async (req, res) => {
   }
 });
 
-// Note: Profile management has been moved to the user service
-
 // Change password
-app.put('/api/auth/change-password', async (req, res) => {
+app.put('/api/auth/change-password', async (req: Request, res: Response) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -373,7 +382,7 @@ app.put('/api/auth/change-password', async (req, res) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IJWTPayload;
     
     // Find user in both collections
     let user = await User.findOne({ _id: decoded.id, isActive: true });
@@ -424,10 +433,10 @@ app.put('/api/auth/change-password', async (req, res) => {
   }
 });
 
-// Note: Staff management endpoints have been moved to the user service
+// Note: Profile management has been moved to the user service
 
 // Error handling
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Auth Service Error:', err);
   res.status(500).json({
     success: false,
@@ -436,7 +445,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
@@ -448,4 +457,4 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });
 
-module.exports = app;
+export default app;

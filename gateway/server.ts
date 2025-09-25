@@ -1,14 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const compression = require('compression');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import compression from 'compression';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import config from './config';
+import { IServiceConfig } from '../types';
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.GATEWAY_PORT || 3000;
+const PORT = parseInt(process.env.GATEWAY_PORT || '3000');
 
 // Security middleware
 app.use(helmet());
@@ -33,31 +35,43 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Service registry - in production, this would be a service discovery service
-const services = {
+const services: { [key: string]: IServiceConfig & { health: string } } = {
   'auth-service': {
     url: process.env.AUTH_SERVICE_URL || 'http://localhost:12004',
+    timeout: 5000,
+    retries: 3,
+    healthCheck: '/health',
     health: '/health',
     routes: ['/api/auth']
   },
   'user-service': {
     url: process.env.USER_SERVICE_URL || 'http://localhost:12001',
+    timeout: 5000,
+    retries: 3,
+    healthCheck: '/health',
     health: '/health',
     routes: ['/api/users', '/api/users/staff', '/api/users/all']
   },
   'product-service': {
     url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:12002',
+    timeout: 5000,
+    retries: 3,
+    healthCheck: '/health',
     health: '/health',
     routes: ['/api/products', '/api/categories']
   },
   'order-service': {
     url: process.env.ORDER_SERVICE_URL || 'http://localhost:12003',
+    timeout: 5000,
+    retries: 3,
+    healthCheck: '/health',
     health: '/health',
     routes: ['/api/orders', '/api/payments']
   }
 };
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
@@ -70,38 +84,40 @@ app.get('/health', (req, res) => {
 Object.keys(services).forEach(serviceName => {
   const service = services[serviceName];
   
-  service.routes.forEach(route => {
-    app.use(route, createProxyMiddleware({
-      target: service.url,
-      changeOrigin: true,
-      pathRewrite: {
-        [`^${route}`]: route
-      },
-      onError: (err, req, res) => {
-        console.error(`Error proxying to ${serviceName}:`, err.message);
-        res.status(503).json({
-          error: 'Service temporarily unavailable',
-          service: serviceName,
-          message: 'The requested service is currently unavailable'
-        });
-      },
-      onProxyReq: (proxyReq, req, res) => {
-        console.log(`Proxying ${req.method} ${req.url} to ${serviceName}`);
-      }
-    }));
-  });
+  if (service) {
+    service.routes.forEach(route => {
+      app.use(route, createProxyMiddleware({
+        target: service.url,
+        changeOrigin: true,
+        pathRewrite: {
+          [`^${route}`]: route
+        },
+        onError: (err: Error, req: Request, res: Response) => {
+          console.error(`Error proxying to ${serviceName}:`, err.message);
+          res.status(503).json({
+            error: 'Service temporarily unavailable',
+            service: serviceName,
+            message: 'The requested service is currently unavailable'
+          });
+        },
+        onProxyReq: (proxyReq: any, req: Request, res: Response) => {
+          console.log(`Proxying ${req.method} ${req.url} to ${serviceName}`);
+        }
+      }));
+    });
+  }
 });
 
 // API documentation endpoint
-app.get('/api', (req, res) => {
+app.get('/api', (req: Request, res: Response) => {
   res.json({
     name: 'Microservice API Gateway',
     version: '1.0.0',
     description: 'Gateway for microservice architecture',
     services: Object.keys(services).map(name => ({
       name,
-      url: services[name].url,
-      routes: services[name].routes
+      url: services[name]?.url || '',
+      routes: services[name]?.routes || []
     })),
     endpoints: {
       health: '/health',
@@ -111,7 +127,7 @@ app.get('/api', (req, res) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     error: 'Not Found',
     message: `Route ${req.originalUrl} not found`,
@@ -120,7 +136,7 @@ app.use('*', (req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Gateway Error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
@@ -136,4 +152,4 @@ app.listen(PORT, () => {
   console.log(`📖 API docs: http://localhost:${PORT}/api`);
 });
 
-module.exports = app;
+export default app;

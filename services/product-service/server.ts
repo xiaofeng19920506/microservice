@@ -1,11 +1,27 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { IApiResponse } from '../../types';
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PRODUCT_SERVICE_PORT || 3002;
+const PORT = parseInt(process.env.PRODUCT_SERVICE_PORT || '3002');
+
+// Product interface
+interface IProduct {
+  id: number;
+  name: string;
+  price: number;
+  category: string;
+  stock: number;
+}
+
+interface ICategory {
+  id: number;
+  name: string;
+  description: string;
+}
 
 // Middleware
 app.use(helmet());
@@ -15,21 +31,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Mock product data
-const products = [
+const products: IProduct[] = [
   { id: 1, name: 'Laptop', price: 999.99, category: 'Electronics', stock: 50 },
   { id: 2, name: 'Smartphone', price: 699.99, category: 'Electronics', stock: 100 },
   { id: 3, name: 'Book', price: 19.99, category: 'Books', stock: 200 },
   { id: 4, name: 'Headphones', price: 149.99, category: 'Electronics', stock: 75 }
 ];
 
-const categories = [
+const categories: ICategory[] = [
   { id: 1, name: 'Electronics', description: 'Electronic devices and gadgets' },
   { id: 2, name: 'Books', description: 'Books and literature' },
   { id: 3, name: 'Clothing', description: 'Apparel and accessories' }
 ];
 
 // Health check
-app.get('/health', (req, res) => {
+app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
     service: 'Product Service',
@@ -39,39 +55,40 @@ app.get('/health', (req, res) => {
 });
 
 // Get all products
-app.get('/api/products', (req, res) => {
+app.get('/api/products', (req: Request, res: Response) => {
   const { category, minPrice, maxPrice, search } = req.query;
   let filteredProducts = [...products];
   
   // Filter by category
   if (category) {
-    filteredProducts = filteredProducts.filter(p => p.category.toLowerCase() === category.toLowerCase());
+    filteredProducts = filteredProducts.filter(p => p.category.toLowerCase() === (category as string).toLowerCase());
   }
   
   // Filter by price range
   if (minPrice) {
-    filteredProducts = filteredProducts.filter(p => p.price >= parseFloat(minPrice));
+    filteredProducts = filteredProducts.filter(p => p.price >= parseFloat(minPrice as string));
   }
   if (maxPrice) {
-    filteredProducts = filteredProducts.filter(p => p.price <= parseFloat(maxPrice));
+    filteredProducts = filteredProducts.filter(p => p.price <= parseFloat(maxPrice as string));
   }
   
   // Search by name
   if (search) {
     filteredProducts = filteredProducts.filter(p => 
-      p.name.toLowerCase().includes(search.toLowerCase())
+      p.name.toLowerCase().includes((search as string).toLowerCase())
     );
   }
   
-  res.json({
+  const response: IApiResponse<IProduct[]> = {
     success: true,
     data: filteredProducts,
     count: filteredProducts.length
-  });
+  };
+  res.json(response);
 });
 
 // Get product by ID
-app.get('/api/products/:id', (req, res) => {
+app.get('/api/products/:id', (req: Request, res: Response) => {
   const productId = parseInt(req.params.id);
   const product = products.find(p => p.id === productId);
   
@@ -82,14 +99,15 @@ app.get('/api/products/:id', (req, res) => {
     });
   }
   
-  res.json({
+  const response: IApiResponse<IProduct> = {
     success: true,
     data: product
-  });
+  };
+  res.json(response);
 });
 
 // Create new product
-app.post('/api/products', (req, res) => {
+app.post('/api/products', (req: Request, res: Response) => {
   const { name, price, category, stock } = req.body;
   
   if (!name || !price || !category) {
@@ -99,7 +117,7 @@ app.post('/api/products', (req, res) => {
     });
   }
   
-  const newProduct = {
+  const newProduct: IProduct = {
     id: products.length + 1,
     name,
     price: parseFloat(price),
@@ -109,15 +127,17 @@ app.post('/api/products', (req, res) => {
   
   products.push(newProduct);
   
-  res.status(201).json({
+  const response: IApiResponse<IProduct> = {
     success: true,
     data: newProduct,
     message: 'Product created successfully'
-  });
+  };
+  
+  res.status(201).json(response);
 });
 
 // Update product
-app.put('/api/products/:id', (req, res) => {
+app.put('/api/products/:id', (req: Request, res: Response) => {
   const productId = parseInt(req.params.id);
   const productIndex = products.findIndex(p => p.id === productId);
   
@@ -137,15 +157,16 @@ app.put('/api/products/:id', (req, res) => {
     stock: parseInt(stock) 
   };
   
-  res.json({
+  const response: IApiResponse<IProduct> = {
     success: true,
     data: products[productIndex],
     message: 'Product updated successfully'
-  });
+  };
+  res.json(response);
 });
 
 // Delete product
-app.delete('/api/products/:id', (req, res) => {
+app.delete('/api/products/:id', (req: Request, res: Response) => {
   const productId = parseInt(req.params.id);
   const productIndex = products.findIndex(p => p.id === productId);
   
@@ -158,22 +179,24 @@ app.delete('/api/products/:id', (req, res) => {
   
   products.splice(productIndex, 1);
   
-  res.json({
+  const response: IApiResponse = {
     success: true,
     message: 'Product deleted successfully'
-  });
+  };
+  res.json(response);
 });
 
 // Categories endpoints
-app.get('/api/categories', (req, res) => {
-  res.json({
+app.get('/api/categories', (req: Request, res: Response) => {
+  const response: IApiResponse<ICategory[]> = {
     success: true,
     data: categories,
     count: categories.length
-  });
+  };
+  res.json(response);
 });
 
-app.get('/api/categories/:id', (req, res) => {
+app.get('/api/categories/:id', (req: Request, res: Response) => {
   const categoryId = parseInt(req.params.id);
   const category = categories.find(c => c.id === categoryId);
   
@@ -184,13 +207,14 @@ app.get('/api/categories/:id', (req, res) => {
     });
   }
   
-  res.json({
+  const response: IApiResponse<ICategory> = {
     success: true,
     data: category
-  });
+  };
+  res.json(response);
 });
 
-app.post('/api/categories', (req, res) => {
+app.post('/api/categories', (req: Request, res: Response) => {
   const { name, description } = req.body;
   
   if (!name) {
@@ -200,7 +224,7 @@ app.post('/api/categories', (req, res) => {
     });
   }
   
-  const newCategory = {
+  const newCategory: ICategory = {
     id: categories.length + 1,
     name,
     description: description || ''
@@ -208,15 +232,17 @@ app.post('/api/categories', (req, res) => {
   
   categories.push(newCategory);
   
-  res.status(201).json({
+  const response: IApiResponse<ICategory> = {
     success: true,
     data: newCategory,
     message: 'Category created successfully'
-  });
+  };
+  
+  res.status(201).json(response);
 });
 
 // Error handling
-app.use((err, req, res, next) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Product Service Error:', err);
   res.status(500).json({
     success: false,
@@ -225,7 +251,7 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use('*', (req, res) => {
+app.use('*', (req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
@@ -237,4 +263,4 @@ app.listen(PORT, () => {
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
 });
 
-module.exports = app;
+export default app;

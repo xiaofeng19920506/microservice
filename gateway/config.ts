@@ -1,7 +1,9 @@
-module.exports = {
+import { IGatewayConfig } from '../types';
+
+const config: IGatewayConfig = {
   // Gateway configuration
   gateway: {
-    port: process.env.GATEWAY_PORT || 3000,
+    port: parseInt(process.env.GATEWAY_PORT || '3000'),
     host: process.env.GATEWAY_HOST || 'localhost'
   },
   
@@ -50,3 +52,5 @@ module.exports = {
     credentials: true
   }
 };
+
+export default config;

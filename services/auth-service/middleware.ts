@@ -1,23 +1,36 @@
-const jwt = require('jsonwebtoken');
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
+import { IJWTPayload } from '../../types';
+
+// Extend Request interface to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: IJWTPayload;
+    }
+  }
+}
 
 // Authentication middleware
-const authenticateToken = (req, res, next) => {
+const authenticateToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
   if (!token) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: 'Access token is required'
     });
+    return;
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IJWTPayload;
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({
+    res.status(403).json({
       success: false,
       message: 'Invalid or expired token'
     });
@@ -25,20 +38,22 @@ const authenticateToken = (req, res, next) => {
 };
 
 // Authorization middleware for specific roles
-const authorize = (...roles) => {
-  return (req, res, next) => {
+const authorize = (...roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Authentication required'
       });
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: 'Insufficient permissions'
       });
+      return;
     }
 
     next();
@@ -46,65 +61,72 @@ const authorize = (...roles) => {
 };
 
 // Staff-only middleware
-const requireStaff = (req, res, next) => {
+const requireStaff = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: 'Authentication required'
     });
+    return;
   }
 
   if (req.user.userType !== 'staff') {
-    return res.status(403).json({
+    res.status(403).json({
       success: false,
       message: 'Staff access required'
     });
+    return;
   }
 
   next();
 };
 
 // Admin-only middleware
-const requireAdmin = (req, res, next) => {
+const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: 'Authentication required'
     });
+    return;
   }
 
   if (req.user.userType !== 'staff' || req.user.role !== 'admin') {
-    return res.status(403).json({
+    res.status(403).json({
       success: false,
       message: 'Admin access required'
     });
+    return;
   }
 
   next();
 };
 
 // Permission-based middleware
-const requirePermission = (permission) => {
-  return (req, res, next) => {
+const requirePermission = (permission: string) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: 'Authentication required'
       });
+      return;
     }
 
     if (req.user.userType !== 'staff') {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: 'Staff access required'
       });
+      return;
     }
 
     if (!req.user.permissions || !req.user.permissions.includes(permission)) {
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         message: `Permission '${permission}' required`
       });
+      return;
     }
 
     next();
@@ -112,17 +134,17 @@ const requirePermission = (permission) => {
 };
 
 // Optional authentication middleware (doesn't fail if no token)
-const optionalAuth = (req, res, next) => {
+const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IJWTPayload;
       req.user = decoded;
     } catch (error) {
       // Token is invalid, but we don't fail the request
-      req.user = null;
+      req.user = undefined;
     }
   }
 
@@ -130,8 +152,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 // Rate limiting middleware for sensitive operations
-const createRateLimit = (windowMs, max, message) => {
-  const rateLimit = require('express-rate-limit');
+const createRateLimit = (windowMs: number, max: number, message: string) => {
   return rateLimit({
     windowMs,
     max,
@@ -142,83 +163,90 @@ const createRateLimit = (windowMs, max, message) => {
 };
 
 // Password validation middleware
-const validatePassword = (req, res, next) => {
+const validatePassword = (req: Request, res: Response, next: NextFunction): void => {
   const { password } = req.body;
   
   if (!password) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: 'Password is required'
     });
+    return;
   }
 
   if (password.length < 6) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: 'Password must be at least 6 characters long'
     });
+    return;
   }
 
   if (password.length > 128) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: 'Password must be less than 128 characters'
     });
+    return;
   }
 
   // Check for common weak passwords
   const weakPasswords = ['password', '123456', 'qwerty', 'abc123'];
   if (weakPasswords.includes(password.toLowerCase())) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: 'Password is too weak. Please choose a stronger password'
     });
+    return;
   }
 
   next();
 };
 
 // Email validation middleware
-const validateEmail = (req, res, next) => {
+const validateEmail = (req: Request, res: Response, next: NextFunction): void => {
   const { email } = req.body;
   
   if (!email) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: 'Email is required'
     });
+    return;
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    return res.status(400).json({
+    res.status(400).json({
       success: false,
       message: 'Please provide a valid email address'
     });
+    return;
   }
 
   next();
 };
 
 // Token blacklist middleware (for logout functionality)
-const tokenBlacklist = new Set();
+const tokenBlacklist = new Set<string>();
 
-const checkBlacklist = (req, res, next) => {
+const checkBlacklist = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (token && tokenBlacklist.has(token)) {
-    return res.status(401).json({
+    res.status(401).json({
       success: false,
       message: 'Token has been revoked'
     });
+    return;
   }
 
   next();
 };
 
 // Add token to blacklist
-const blacklistToken = (req, res, next) => {
+const blacklistToken = (req: Request, res: Response, next: NextFunction): void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -229,7 +257,7 @@ const blacklistToken = (req, res, next) => {
   next();
 };
 
-module.exports = {
+export {
   authenticateToken,
   authorize,
   requireStaff,

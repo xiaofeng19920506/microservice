@@ -4,13 +4,19 @@
   "description": "Microservice architecture with API Gateway",
   "main": "index.js",
   "scripts": {
-    "start": "node gateway/server.js",
-    "dev": "nodemon gateway/server.js",
-    "start:gateway": "node gateway/server.js",
-    "start:auth": "node services/auth-service/server.js",
-    "start:user": "node services/user-service/server.js",
-    "start:product": "node services/product-service/server.js",
-    "start:order": "node services/order-service/server.js",
+    "build": "tsc",
+    "start": "node dist/gateway/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only gateway/server.ts",
+    "dev:gateway": "ts-node-dev --respawn --transpile-only gateway/server.ts",
+    "dev:auth": "ts-node-dev --respawn --transpile-only services/auth-service/server.ts",
+    "dev:user": "ts-node-dev --respawn --transpile-only services/user-service/server.ts",
+    "dev:product": "ts-node-dev --respawn --transpile-only services/product-service/server.ts",
+    "dev:order": "ts-node-dev --respawn --transpile-only services/order-service/server.ts",
+    "start:gateway": "node dist/gateway/server.js",
+    "start:auth": "node dist/services/auth-service/server.js",
+    "start:user": "node dist/services/user-service/server.js",
+    "start:product": "node dist/services/product-service/server.js",
+    "start:order": "node dist/services/order-service/server.js",
     "start:all": "npm run start:gateway & npm run start:auth & npm run start:user & npm run start:product & npm run start:order",
     "start:all:win": "start /B npm run start:gateway & start /B npm run start:auth & start /B npm run start:user & start /B npm run start:product & start /B npm run start:order",
     "start:all:mac": "npm run start:gateway & npm run start:auth & npm run start:user & npm run start:product & npm run start:order",
@@ -47,7 +53,17 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3",
+    "@types/node": "^20.10.5",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/morgan": "^1.9.9",
+    "@types/compression": "^1.7.5",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.5",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0"
   }
 }
 
