@@ -10,13 +10,29 @@ services:
     environment:
       - NODE_ENV=production
       - GATEWAY_PORT=12000
+      - AUTH_SERVICE_URL=http://auth-service:12004
       - USER_SERVICE_URL=http://user-service:12001
       - PRODUCT_SERVICE_URL=http://product-service:12002
-      - ORDER_SERVICE_URL=http://order-service:120012
+      - ORDER_SERVICE_URL=http://order-service:12003
     depends_on:
+      - auth-service
       - user-service
       - product-service
       - order-service
+    networks:
+      - microservice-network
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    ports:
+      - "12004:12004"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_PORT=12004
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
     networks:
       - microservice-network
 

@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
@@ -20,6 +22,55 @@ const users = [
   { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'admin' },
   { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'user' }
 ];
+
+// Mock staff data
+const staff = [
+  { id: 1, name: 'Admin User', email: 'admin@example.com', role: 'admin', department: 'IT', position: 'System Administrator', permissions: ['read', 'write', 'delete', 'admin'] },
+  { id: 2, name: 'Manager User', email: 'manager@example.com', role: 'manager', department: 'Sales', position: 'Sales Manager', permissions: ['read', 'write'] }
+];
+
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: 'Access token is required'
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(403).json({
+      success: false,
+      message: 'Invalid or expired token'
+    });
+  }
+};
+
+// Admin staff middleware
+const requireAdminStaff = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+
+  if (req.user.userType !== 'staff' || req.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Admin staff access required'
+    });
+  }
+
+  next();
+};
 
 // Health check
 app.get('/health', (req, res) => {
@@ -127,68 +178,98 @@ app.delete('/api/users/:id', (req, res) => {
   });
 });
 
-// Authentication endpoints
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  // Mock authentication
-  const user = users.find(u => u.email === email);
-  
-  if (!user) {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid credentials'
-    });
-  }
-  
-  // In a real app, you'd verify the password hash
+// ==================== STAFF MANAGEMENT ENDPOINTS ====================
+
+// Get all staff members (admin only)
+app.get('/api/users/staff', authenticateToken, requireAdminStaff, (req, res) => {
   res.json({
     success: true,
-    data: {
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
-      token: 'mock-jwt-token-' + user.id
-    },
-    message: 'Login successful'
+    data: staff,
+    count: staff.length,
+    message: 'Staff list retrieved successfully'
   });
 });
 
-app.post('/api/auth/register', (req, res) => {
-  const { name, email, password } = req.body;
+// Get staff member by ID (admin only)
+app.get('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req, res) => {
+  const staffId = parseInt(req.params.id);
+  const staffMember = staff.find(s => s.id === staffId);
   
-  if (!name || !email || !password) {
-    return res.status(400).json({
+  if (!staffMember) {
+    return res.status(404).json({
       success: false,
-      message: 'Name, email, and password are required'
+      message: 'Staff member not found'
     });
   }
-  
-  // Check if user already exists
-  const existingUser = users.find(u => u.email === email);
-  if (existingUser) {
-    return res.status(409).json({
-      success: false,
-      message: 'User already exists'
-    });
-  }
-  
-  const newUser = {
-    id: users.length + 1,
-    name,
-    email,
-    role: 'user'
-  };
-  
-  users.push(newUser);
-  
-  res.status(201).json({
+
+  res.json({
     success: true,
-    data: {
-      user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role },
-      token: 'mock-jwt-token-' + newUser.id
-    },
-    message: 'Registration successful'
+    data: staffMember,
+    message: 'Staff member retrieved successfully'
   });
 });
+
+// Update staff member (admin only)
+app.put('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req, res) => {
+  const staffId = parseInt(req.params.id);
+  const staffIndex = staff.findIndex(s => s.id === staffId);
+  
+  if (staffIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Staff member not found'
+    });
+  }
+
+  const { name, email, role, department, position, permissions, isActive } = req.body;
+  
+  // Update staff member
+  if (name) staff[staffIndex].name = name;
+  if (email) staff[staffIndex].email = email;
+  if (role) staff[staffIndex].role = role;
+  if (department) staff[staffIndex].department = department;
+  if (position) staff[staffIndex].position = position;
+  if (permissions) staff[staffIndex].permissions = permissions;
+  if (typeof isActive === 'boolean') staff[staffIndex].isActive = isActive;
+
+  res.json({
+    success: true,
+    data: staff[staffIndex],
+    message: 'Staff member updated successfully'
+  });
+});
+
+// Delete staff member (admin only)
+app.delete('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req, res) => {
+  const staffId = parseInt(req.params.id);
+  const staffIndex = staff.findIndex(s => s.id === staffId);
+  
+  if (staffIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      message: 'Staff member not found'
+    });
+  }
+
+  staff.splice(staffIndex, 1);
+
+  res.json({
+    success: true,
+    message: 'Staff member deleted successfully'
+  });
+});
+
+// Get all users (admin only)
+app.get('/api/users/all', authenticateToken, requireAdminStaff, (req, res) => {
+  res.json({
+    success: true,
+    data: users,
+    count: users.length,
+    message: 'Users list retrieved successfully'
+  });
+});
+
+// Note: Authentication endpoints have been moved to the dedicated auth service
 
 // Error handling
 app.use((err, req, res, next) => {

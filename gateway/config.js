@@ -7,12 +7,19 @@ module.exports = {
   
   // Service discovery configuration
   services: {
+    'auth-service': {
+      url: process.env.AUTH_SERVICE_URL || 'http://localhost:12004',
+      timeout: 5000,
+      retries: 3,
+      healthCheck: '/health',
+      routes: ['/api/auth']
+    },
     'user-service': {
       url: process.env.USER_SERVICE_URL || 'http://localhost:12001',
       timeout: 5000,
       retries: 3,
       healthCheck: '/health',
-      routes: ['/api/users', '/api/auth']
+      routes: ['/api/users', '/api/users/staff', '/api/users/all']
     },
     'product-service': {
       url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:12002',

@@ -34,18 +34,23 @@ app.use(express.urlencoded({ extended: true }));
 
 // Service registry - in production, this would be a service discovery service
 const services = {
-  'user-service': {
-    url: process.env.USER_SERVICE_URL || 'http://localhost:3001',
+  'auth-service': {
+    url: process.env.AUTH_SERVICE_URL || 'http://localhost:12004',
     health: '/health',
-    routes: ['/api/users', '/api/auth']
+    routes: ['/api/auth']
+  },
+  'user-service': {
+    url: process.env.USER_SERVICE_URL || 'http://localhost:12001',
+    health: '/health',
+    routes: ['/api/users', '/api/users/staff', '/api/users/all']
   },
   'product-service': {
-    url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:3002',
+    url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:12002',
     health: '/health',
     routes: ['/api/products', '/api/categories']
   },
   'order-service': {
-    url: process.env.ORDER_SERVICE_URL || 'http://localhost:3003',
+    url: process.env.ORDER_SERVICE_URL || 'http://localhost:12003',
     health: '/health',
     routes: ['/api/orders', '/api/payments']
   }
