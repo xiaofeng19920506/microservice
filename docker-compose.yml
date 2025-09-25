@@ -1,4 +1,4 @@
-version: '3.8'
+version: '12.8'
 
 services:
   gateway:
@@ -6,13 +6,13 @@ services:
       context: .
       dockerfile: gateway/Dockerfile
     ports:
-      - "3000:3000"
+      - "12000:12000"
     environment:
       - NODE_ENV=production
-      - GATEWAY_PORT=3000
-      - USER_SERVICE_URL=http://user-service:3001
-      - PRODUCT_SERVICE_URL=http://product-service:3002
-      - ORDER_SERVICE_URL=http://order-service:3003
+      - GATEWAY_PORT=12000
+      - USER_SERVICE_URL=http://user-service:12001
+      - PRODUCT_SERVICE_URL=http://product-service:12002
+      - ORDER_SERVICE_URL=http://order-service:120012
     depends_on:
       - user-service
       - product-service
@@ -25,10 +25,10 @@ services:
       context: .
       dockerfile: services/user-service/Dockerfile
     ports:
-      - "3001:3001"
+      - "12001:12001"
     environment:
       - NODE_ENV=production
-      - USER_SERVICE_PORT=3001
+      - USER_SERVICE_PORT=12001
     networks:
       - microservice-network
 
@@ -37,10 +37,10 @@ services:
       context: .
       dockerfile: services/product-service/Dockerfile
     ports:
-      - "3002:3002"
+      - "12002:12002"
     environment:
       - NODE_ENV=production
-      - PRODUCT_SERVICE_PORT=3002
+      - PRODUCT_SERVICE_PORT=12002
     networks:
       - microservice-network
 
@@ -49,10 +49,10 @@ services:
       context: .
       dockerfile: services/order-service/Dockerfile
     ports:
-      - "3003:3003"
+      - "12003:12003"
     environment:
       - NODE_ENV=production
-      - ORDER_SERVICE_PORT=3003
+      - ORDER_SERVICE_PORT=12003
     networks:
       - microservice-network
 
