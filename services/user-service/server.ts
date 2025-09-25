@@ -36,8 +36,6 @@ const staff: IStaff[] = [
     workingStore: [], 
     managedStore: [], 
     ownedStore: [], 
-    permissions: ['read', 'write', 'delete', 'admin'],
-    addresses: []
   },
   { 
     _id: '2', 
@@ -49,13 +47,11 @@ const staff: IStaff[] = [
     workingStore: [], 
     managedStore: [], 
     ownedStore: [], 
-    permissions: ['read', 'write'],
-    addresses: []
   }
 ];
 
 // Authentication middleware
-const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+const authenticateToken = (req: Request, res: Response, next: NextFunction): Response | void => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -79,7 +75,7 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
 };
 
 // Admin staff middleware
-const requireAdminStaff = (req: Request, res: Response, next: NextFunction) => {
+const requireAdminStaff = (req: Request, res: Response, next: NextFunction): Response | void => {
   if (!req.user) {
     return res.status(401).json({
       success: false,
@@ -118,7 +114,7 @@ app.get('/api/users', (req: Request, res: Response) => {
 });
 
 // Get user by ID
-app.get('/api/users/:id', (req: Request, res: Response) => {
+app.get('/api/users/:id', (req: Request, res: Response): Response | void => {
   const userId = req.params.id;
   const user = users.find(u => u._id === userId);
   
@@ -137,7 +133,7 @@ app.get('/api/users/:id', (req: Request, res: Response) => {
 });
 
 // Create new user
-app.post('/api/users', (req: Request, res: Response) => {
+app.post('/api/users', (req: Request, res: Response): Response | void => {
   const { firstName, lastName, email, role = 'user' } = req.body;
   
   if (!firstName || !lastName || !email) {
@@ -169,7 +165,7 @@ app.post('/api/users', (req: Request, res: Response) => {
 });
 
 // Update user
-app.put('/api/users/:id', (req: Request, res: Response) => {
+app.put('/api/users/:id', (req: Request, res: Response): Response | void => {
   const userId = req.params.id;
   const userIndex = users.findIndex(u => u._id === userId);
   
@@ -181,7 +177,7 @@ app.put('/api/users/:id', (req: Request, res: Response) => {
   }
   
   const { firstName, lastName, email, role } = req.body;
-  users[userIndex] = { ...users[userIndex], firstName, lastName, email, role };
+  users[userIndex] = { ...users[userIndex], firstName, lastName, email, role, password: users[userIndex]?.password || 'hashed', addresses: users[userIndex]?.addresses || [] };
   
   const response: IApiResponse<IUser> = {
     success: true,
@@ -193,7 +189,7 @@ app.put('/api/users/:id', (req: Request, res: Response) => {
 });
 
 // Delete user
-app.delete('/api/users/:id', (req: Request, res: Response) => {
+app.delete('/api/users/:id', (req: Request, res: Response): Response | void => {
   const userId = req.params.id;
   const userIndex = users.findIndex(u => u._id === userId);
   
@@ -228,7 +224,7 @@ app.get('/api/users/staff', authenticateToken, requireAdminStaff, (req: Request,
 });
 
 // Get staff member by ID (admin only)
-app.get('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Request, res: Response) => {
+app.get('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Request, res: Response): Response | void => {
   const staffId = req.params.id;
   const staffMember = staff.find(s => s._id === staffId);
   
@@ -248,7 +244,7 @@ app.get('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Requ
 });
 
 // Update staff member (admin only)
-app.put('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Request, res: Response) => {
+app.put('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Request, res: Response): Response | void => {
   const staffId = req.params.id;
   const staffIndex = staff.findIndex(s => s._id === staffId);
   
@@ -262,15 +258,16 @@ app.put('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Requ
   const { firstName, lastName, email, role, workingStore, managedStore, ownedStore, permissions, isActive } = req.body;
   
   // Update staff member
-  if (firstName) staff[staffIndex].firstName = firstName;
-  if (lastName) staff[staffIndex].lastName = lastName;
-  if (email) staff[staffIndex].email = email;
-  if (role) staff[staffIndex].role = role;
-  if (workingStore) staff[staffIndex].workingStore = workingStore;
-  if (managedStore) staff[staffIndex].managedStore = managedStore;
-  if (ownedStore) staff[staffIndex].ownedStore = ownedStore;
-  if (permissions) staff[staffIndex].permissions = permissions;
-  if (typeof isActive === 'boolean') staff[staffIndex].isActive = isActive;
+  if (staff[staffIndex]) {
+    if (firstName) staff[staffIndex].firstName = firstName;
+    if (lastName) staff[staffIndex].lastName = lastName;
+    if (email) staff[staffIndex].email = email;
+    if (role) staff[staffIndex].role = role;
+    if (workingStore) staff[staffIndex].workingStore = workingStore;
+    if (managedStore) staff[staffIndex].managedStore = managedStore;
+    if (ownedStore) staff[staffIndex].ownedStore = ownedStore;
+    if (typeof isActive === 'boolean') staff[staffIndex].isActive = isActive;
+  }
 
   const response: IApiResponse<IStaff> = {
     success: true,
@@ -281,7 +278,7 @@ app.put('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Requ
 });
 
 // Delete staff member (admin only)
-app.delete('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Request, res: Response) => {
+app.delete('/api/users/staff/:id', authenticateToken, requireAdminStaff, (req: Request, res: Response): Response | void => {
   const staffId = req.params.id;
   const staffIndex = staff.findIndex(s => s._id === staffId);
   

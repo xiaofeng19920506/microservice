@@ -66,7 +66,7 @@ export const getServiceConfig = (): ServiceConfig => {
     brevoApiKey: process.env.BREVO_API_KEY || "",
     brevoSenderEmail: process.env.BREVO_SENDER_EMAIL || DEFAULT_SENDER_EMAIL,
     brevoSenderName: process.env.BREVO_SENDER_NAME || DEFAULT_SENDER_NAME,
-    brevoSmtpUser: process.env.BREVO_USER || process.env.BEWVO_USER || "",
+    brevoSmtpUser: process.env.BREVO_USER || "",
     brevoSmtpPassword: process.env.BREVO_PASSWORD || "",
   };
 
@@ -105,12 +105,23 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(email: string, firstName: string, resetLink: string, isAdmin: boolean = false): Promise<boolean> {
+    console.log("🚀 EMAIL SERVICE CALLED - sendPasswordResetEmail");
     try {
       const userType = isAdmin ? 'Staff' : 'Customer';
       const frontendType = isAdmin ? 'Admin Dashboard' : 'Customer Portal';
       
+      console.log("📧 Email Service Debug Info:");
+      console.log("Email:", email);
+      console.log("FirstName:", firstName);
+      console.log("ResetLink:", resetLink);
+      console.log("IsAdmin:", isAdmin);
+      console.log("Brevo SMTP User:", this.config.brevoSmtpUser);
+      console.log("Brevo SMTP Password:", this.config.brevoSmtpPassword ? "***configured***" : "NOT SET");
+      console.log("Brevo Sender Email:", this.config.brevoSenderEmail);
+      console.log("Brevo Sender Name:", this.config.brevoSenderName);
+      
       if (!this.config.brevoSmtpPassword) {
-        console.warn("Brevo SMTP password not configured, skipping email send");
+        console.warn("❌ Brevo SMTP password not configured, skipping email send");
         return false;
       }
 
@@ -175,9 +186,19 @@ class EmailService {
 
       const result = await this.transporter.sendMail(mailOptions);
       console.log(`✅ Password reset email sent to ${email}`);
+      console.log(`📧 Message ID: ${result.messageId}`);
+      console.log(`📧 Response: ${result.response}`);
       return true;
     } catch (error) {
       console.error("❌ Error sending password reset email:", error);
+      console.error("❌ Error message:", (error as any).message);
+      console.error("❌ Error code:", (error as any).code);
+      console.error("❌ SMTP Config:", {
+        host: 'smtp-relay.brevo.com',
+        port: 587,
+        user: this.config.brevoSmtpUser,
+        password: this.config.brevoSmtpPassword ? '***SET***' : 'NOT SET'
+      });
       return false;
     }
   }

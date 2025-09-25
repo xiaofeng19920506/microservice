@@ -72,7 +72,7 @@ const generateTokens = (user: any): { accessToken: string; refreshToken: string 
 };
 
 // Register new user (regular or staff based on isAdmin flag)
-app.post('/api/auth/register', authLimiter, async (req: Request, res: Response) => {
+app.post('/api/auth/register', authLimiter, async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { firstName, lastName, email, password, role, workingStore, managedStore, ownedStore, isAdmin = false }: IRegisterRequest = req.body;
 
@@ -194,7 +194,7 @@ app.post('/api/auth/register', authLimiter, async (req: Request, res: Response) 
 });
 
 // Login user (regular or staff based on isAdmin flag)
-app.post('/api/auth/login', authLimiter, async (req: Request, res: Response) => {
+app.post('/api/auth/login', authLimiter, async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { email, password, isAdmin = false }: IAuthRequest = req.body;
 
@@ -268,7 +268,7 @@ app.post('/api/auth/login', authLimiter, async (req: Request, res: Response) => 
 });
 
 // Refresh access token
-app.post('/api/auth/refresh', async (req: Request, res: Response) => {
+app.post('/api/auth/refresh', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { refreshToken } = req.body;
 
@@ -350,7 +350,7 @@ app.post('/api/auth/logout', async (req: Request, res: Response) => {
 });
 
 // Verify token endpoint
-app.post('/api/auth/verify', async (req: Request, res: Response) => {
+app.post('/api/auth/verify', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { token } = req.body;
 
@@ -394,7 +394,7 @@ app.post('/api/auth/verify', async (req: Request, res: Response) => {
 });
 
 // Change password
-app.put('/api/auth/change-password', async (req: Request, res: Response) => {
+app.put('/api/auth/change-password', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
     
@@ -460,7 +460,7 @@ app.put('/api/auth/change-password', async (req: Request, res: Response) => {
 });
 
 // Request password reset
-app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
+app.post('/api/auth/forgot-password', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { email, isAdmin = false } = req.body;
     
@@ -475,11 +475,19 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
     let user = null;
     if (isAdmin) {
       user = await Staff.findOne({ email, isActive: true });
+      console.log(`🔍 Looking for staff user with email: ${email}`);
     } else {
       user = await User.findOne({ email, isActive: true });
+      console.log(`🔍 Looking for regular user with email: ${email}`);
+    }
+    
+    console.log(`👤 User found:`, user ? 'YES' : 'NO');
+    if (user) {
+      console.log(`👤 User details:`, { id: user._id, email: user.email, firstName: user.firstName });
     }
     
     if (!user) {
+      console.log(`❌ User not found in database for email: ${email}`);
       // Don't reveal if user exists or not for security
       return res.status(200).json({
         success: true,
@@ -531,7 +539,7 @@ app.post('/api/auth/forgot-password', async (req: Request, res: Response) => {
 });
 
 // Reset password with token
-app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
+app.post('/api/auth/reset-password', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { token, newPassword } = req.body;
     

@@ -88,8 +88,8 @@ app.get('/api/products', (req: Request, res: Response) => {
 });
 
 // Get product by ID
-app.get('/api/products/:id', (req: Request, res: Response) => {
-  const productId = parseInt(req.params.id);
+app.get('/api/products/:id', (req: Request, res: Response): Response | void => {
+  const productId = parseInt(req.params.id || '0');
   const product = products.find(p => p.id === productId);
   
   if (!product) {
@@ -107,7 +107,7 @@ app.get('/api/products/:id', (req: Request, res: Response) => {
 });
 
 // Create new product
-app.post('/api/products', (req: Request, res: Response) => {
+app.post('/api/products', (req: Request, res: Response): Response | void => {
   const { name, price, category, stock } = req.body;
   
   if (!name || !price || !category) {
@@ -137,8 +137,8 @@ app.post('/api/products', (req: Request, res: Response) => {
 });
 
 // Update product
-app.put('/api/products/:id', (req: Request, res: Response) => {
-  const productId = parseInt(req.params.id);
+app.put('/api/products/:id', (req: Request, res: Response): Response | void => {
+  const productId = parseInt(req.params.id || '0');
   const productIndex = products.findIndex(p => p.id === productId);
   
   if (productIndex === -1) {
@@ -154,7 +154,8 @@ app.put('/api/products/:id', (req: Request, res: Response) => {
     name, 
     price: parseFloat(price), 
     category, 
-    stock: parseInt(stock) 
+    stock: parseInt(stock),
+    id: products[productIndex]?.id || Date.now()
   };
   
   const response: IApiResponse<IProduct> = {
@@ -166,8 +167,8 @@ app.put('/api/products/:id', (req: Request, res: Response) => {
 });
 
 // Delete product
-app.delete('/api/products/:id', (req: Request, res: Response) => {
-  const productId = parseInt(req.params.id);
+app.delete('/api/products/:id', (req: Request, res: Response): Response | void => {
+  const productId = parseInt(req.params.id || '0');
   const productIndex = products.findIndex(p => p.id === productId);
   
   if (productIndex === -1) {
@@ -196,8 +197,8 @@ app.get('/api/categories', (req: Request, res: Response) => {
   res.json(response);
 });
 
-app.get('/api/categories/:id', (req: Request, res: Response) => {
-  const categoryId = parseInt(req.params.id);
+app.get('/api/categories/:id', (req: Request, res: Response): Response | void => {
+  const categoryId = parseInt(req.params.id || '0');
   const category = categories.find(c => c.id === categoryId);
   
   if (!category) {
@@ -214,7 +215,7 @@ app.get('/api/categories/:id', (req: Request, res: Response) => {
   res.json(response);
 });
 
-app.post('/api/categories', (req: Request, res: Response) => {
+app.post('/api/categories', (req: Request, res: Response): Response | void => {
   const { name, description } = req.body;
   
   if (!name) {

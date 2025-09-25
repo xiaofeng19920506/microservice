@@ -98,8 +98,8 @@ app.get('/api/orders', (req: Request, res: Response) => {
 });
 
 // Get order by ID
-app.get('/api/orders/:id', (req: Request, res: Response) => {
-  const orderId = parseInt(req.params.id);
+app.get('/api/orders/:id', (req: Request, res: Response): Response | void => {
+  const orderId = parseInt(req.params.id || '0');
   const order = orders.find(o => o.id === orderId);
   
   if (!order) {
@@ -117,7 +117,7 @@ app.get('/api/orders/:id', (req: Request, res: Response) => {
 });
 
 // Create new order
-app.post('/api/orders', (req: Request, res: Response) => {
+app.post('/api/orders', (req: Request, res: Response): Response | void => {
   const { userId, items } = req.body;
   
   if (!userId || !items || !Array.isArray(items) || items.length === 0) {
@@ -151,8 +151,8 @@ app.post('/api/orders', (req: Request, res: Response) => {
 });
 
 // Update order status
-app.put('/api/orders/:id/status', (req: Request, res: Response) => {
-  const orderId = parseInt(req.params.id);
+app.put('/api/orders/:id/status', (req: Request, res: Response): Response | void => {
+  const orderId = parseInt(req.params.id || '0');
   const { status } = req.body;
   
   const orderIndex = orders.findIndex(o => o.id === orderId);
@@ -171,7 +171,9 @@ app.put('/api/orders/:id/status', (req: Request, res: Response) => {
     });
   }
   
-  orders[orderIndex].status = status as IOrder['status'];
+  if (orders[orderIndex]) {
+    orders[orderIndex].status = status as IOrder['status'];
+  }
   
   const response: IApiResponse<IOrder> = {
     success: true,
@@ -182,8 +184,8 @@ app.put('/api/orders/:id/status', (req: Request, res: Response) => {
 });
 
 // Delete order
-app.delete('/api/orders/:id', (req: Request, res: Response) => {
-  const orderId = parseInt(req.params.id);
+app.delete('/api/orders/:id', (req: Request, res: Response): Response | void => {
+  const orderId = parseInt(req.params.id || '0');
   const orderIndex = orders.findIndex(o => o.id === orderId);
   
   if (orderIndex === -1) {
@@ -225,8 +227,8 @@ app.get('/api/payments', (req: Request, res: Response) => {
   res.json(response);
 });
 
-app.get('/api/payments/:id', (req: Request, res: Response) => {
-  const paymentId = parseInt(req.params.id);
+app.get('/api/payments/:id', (req: Request, res: Response): Response | void => {
+  const paymentId = parseInt(req.params.id || '0');
   const payment = payments.find(p => p.id === paymentId);
   
   if (!payment) {
@@ -243,7 +245,7 @@ app.get('/api/payments/:id', (req: Request, res: Response) => {
   res.json(response);
 });
 
-app.post('/api/payments', (req: Request, res: Response) => {
+app.post('/api/payments', (req: Request, res: Response): Response | void => {
   const { orderId, amount, method } = req.body;
   
   if (!orderId || !amount || !method) {
@@ -281,8 +283,8 @@ app.post('/api/payments', (req: Request, res: Response) => {
   res.status(201).json(response);
 });
 
-app.put('/api/payments/:id/status', (req: Request, res: Response) => {
-  const paymentId = parseInt(req.params.id);
+app.put('/api/payments/:id/status', (req: Request, res: Response): Response | void => {
+  const paymentId = parseInt(req.params.id || '0');
   const { status } = req.body;
   
   const paymentIndex = payments.findIndex(p => p.id === paymentId);
@@ -301,7 +303,9 @@ app.put('/api/payments/:id/status', (req: Request, res: Response) => {
     });
   }
   
-  payments[paymentIndex].status = status as IPayment['status'];
+  if (payments[paymentIndex]) {
+    payments[paymentIndex].status = status as IPayment['status'];
+  }
   
   const response: IApiResponse<IPayment> = {
     success: true,
