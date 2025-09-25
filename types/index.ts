@@ -24,7 +24,6 @@ export interface IStaff {
   workingStore: IStore[];
   managedStore: IStore[];
   ownedStore: IStore[];
-  permissions: string[];
   isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -61,7 +60,6 @@ export interface IRegisterRequest {
   role?: string;
   department?: string;
   position?: string;
-  permissions?: string[];
   workingStore?: IStore[];
   managedStore?: IStore[];
   ownedStore?: IStore[];
@@ -99,7 +97,6 @@ export interface IJWTPayload {
   lastName: string;
   role: string;
   userType: 'customer' | 'staff';
-  permissions?: string[];
 }
 
 // API Response Types

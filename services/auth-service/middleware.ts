@@ -102,36 +102,6 @@ const requireAdmin = (req: Request, res: Response, next: NextFunction): void => 
   next();
 };
 
-// Permission-based middleware
-const requirePermission = (permission: string) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    if (!req.user) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required'
-      });
-      return;
-    }
-
-    if (req.user.userType !== 'staff') {
-      res.status(403).json({
-        success: false,
-        message: 'Staff access required'
-      });
-      return;
-    }
-
-    if (!req.user.permissions || !req.user.permissions.includes(permission)) {
-      res.status(403).json({
-        success: false,
-        message: `Permission '${permission}' required`
-      });
-      return;
-    }
-
-    next();
-  };
-};
 
 // Optional authentication middleware (doesn't fail if no token)
 const optionalAuth = (req: Request, res: Response, next: NextFunction): void => {
@@ -262,7 +232,6 @@ export {
   authorize,
   requireStaff,
   requireAdmin,
-  requirePermission,
   optionalAuth,
   createRateLimit,
   validatePassword,

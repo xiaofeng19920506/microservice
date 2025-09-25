@@ -85,10 +85,6 @@ const staffSchema = new Schema({
   workingStore: [storeSchema],
   managedStore: [storeSchema],
   ownedStore: [storeSchema],
-  permissions: [{
-    type: String,
-    enum: ['read', 'write', 'delete', 'admin']
-  }],
   addresses: {
     type: [addressSchema],
     default: []
