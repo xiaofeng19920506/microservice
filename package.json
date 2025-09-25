@@ -1,0 +1,49 @@
+{
+  "name": "microservice-architecture",
+  "version": "1.0.0",
+  "description": "Microservice architecture with API Gateway",
+  "main": "index.js",
+  "scripts": {
+    "start": "node gateway/server.js",
+    "dev": "nodemon gateway/server.js",
+    "start:gateway": "node gateway/server.js",
+    "start:user": "node services/user-service/server.js",
+    "start:product": "node services/product-service/server.js",
+    "start:order": "node services/order-service/server.js",
+    "start:all": "npm run start:gateway & npm run start:user & npm run start:product & npm run start:order",
+    "start:all:win": "start /B npm run start:gateway & start /B npm run start:user & start /B npm run start:product & start /B npm run start:order",
+    "start:all:mac": "npm run start:gateway & npm run start:user & npm run start:product & npm run start:order",
+    "start:all:linux": "npm run start:gateway & npm run start:user & npm run start:product & npm run start:order",
+    "restart:all": "npm run stop:all && npm run start:all",
+    "restart:all:win": "npm run stop:all:win && npm run start:all:win",
+    "restart:all:mac": "npm run stop:all:mac && npm run start:all:mac",
+    "restart:all:linux": "npm run stop:all:linux && npm run start:all:linux",
+    "stop:all": "pkill -f 'node gateway/server.js' && pkill -f 'node services/user-service/server.js' && pkill -f 'node services/product-service/server.js' && pkill -f 'node services/order-service/server.js'",
+    "stop:all:win": "taskkill /F /IM node.exe",
+    "stop:all:mac": "pkill -f 'node gateway/server.js' && pkill -f 'node services/user-service/server.js' && pkill -f 'node services/product-service/server.js' && pkill -f 'node services/order-service/server.js'",
+    "stop:all:linux": "pkill -f 'node gateway/server.js' && pkill -f 'node services/user-service/server.js' && pkill -f 'node services/product-service/server.js' && pkill -f 'node services/order-service/server.js'",
+    "dev:all": "concurrently \"npm run dev\" \"npm run start:user\" \"npm run start:product\" \"npm run start:order\"",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up",
+    "docker:down": "docker-compose down",
+    "docker:restart": "docker-compose down && docker-compose up"
+  },
+  "keywords": ["microservice", "api-gateway", "nodejs", "express"],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0",
+    "http-proxy-middleware": "^2.0.6",
+    "dotenv": "^16.3.1",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "concurrently": "^8.2.2"
+  }
+}
+
