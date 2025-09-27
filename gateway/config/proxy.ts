@@ -1,9 +1,6 @@
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { IServiceConfig } from "../../types";
-import {
-  gatewayAuthMiddleware,
-  gatewayUserMiddleware,
-} from "../middleware/gatewayAuth";
+import { gatewayUserMiddleware } from "../middleware/gatewayAuth";
 
 // Service configurations
 const services: Record<string, IServiceConfig> = {
