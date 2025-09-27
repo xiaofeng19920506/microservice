@@ -12,13 +12,9 @@ services:
       - GATEWAY_PORT=12000
       - AUTH_SERVICE_URL=http://auth-service:12004
       - USER_SERVICE_URL=http://user-service:12001
-      - PRODUCT_SERVICE_URL=http://product-service:12002
-      - ORDER_SERVICE_URL=http://order-service:12003
     depends_on:
       - auth-service
       - user-service
-      - product-service
-      - order-service
     networks:
       - microservice-network
 
@@ -48,29 +44,6 @@ services:
     networks:
       - microservice-network
 
-  product-service:
-    build:
-      context: .
-      dockerfile: services/product-service/Dockerfile
-    ports:
-      - "12002:12002"
-    environment:
-      - NODE_ENV=production
-      - PRODUCT_SERVICE_PORT=12002
-    networks:
-      - microservice-network
-
-  order-service:
-    build:
-      context: .
-      dockerfile: services/order-service/Dockerfile
-    ports:
-      - "12003:12003"
-    environment:
-      - NODE_ENV=production
-      - ORDER_SERVICE_PORT=12003
-    networks:
-      - microservice-network
 
 networks:
   microservice-network:

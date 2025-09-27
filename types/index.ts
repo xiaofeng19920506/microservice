@@ -142,12 +142,8 @@ export interface IEnvConfig {
   GATEWAY_HOST: string;
   AUTH_SERVICE_URL: string;
   USER_SERVICE_URL: string;
-  PRODUCT_SERVICE_URL: string;
-  ORDER_SERVICE_URL: string;
   AUTH_SERVICE_PORT: number;
   USER_SERVICE_PORT: number;
-  PRODUCT_SERVICE_PORT: number;
-  ORDER_SERVICE_PORT: number;
   MONGODB_URI: string;
   JWT_SECRET: string;
   JWT_REFRESH_SECRET: string;

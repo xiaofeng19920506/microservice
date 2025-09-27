@@ -52,22 +52,6 @@ const services: { [key: string]: IServiceConfig & { health: string } } = {
     health: '/health',
     routes: ['/api/users', '/api/users/staff', '/api/users/all']
   },
-  'product-service': {
-    url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:12002',
-    timeout: 5000,
-    retries: 3,
-    healthCheck: '/health',
-    health: '/health',
-    routes: ['/api/products', '/api/categories']
-  },
-  'order-service': {
-    url: process.env.ORDER_SERVICE_URL || 'http://localhost:12003',
-    timeout: 5000,
-    retries: 3,
-    healthCheck: '/health',
-    health: '/health',
-    routes: ['/api/orders', '/api/payments']
-  }
 };
 
 // Health check endpoint
