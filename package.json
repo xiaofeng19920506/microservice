@@ -10,6 +10,7 @@
     "dev:auth": "ts-node-dev --respawn --transpile-only services/auth-service/server.ts",
     "dev:user": "ts-node-dev --respawn --transpile-only services/user-service/server.ts",
     "dev:all": "concurrently \"npm run dev:gateway\" \"npm run dev:auth\" \"npm run dev:user\"",
+    "stop": "pkill -f 'ts-node-dev' || true && pkill -f 'concurrently' || true",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up",
     "docker:down": "docker-compose down",
@@ -25,6 +26,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/nodemailer": "^7.0.1",
+    "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
     "cors": "^2.8.5",
@@ -36,7 +38,9 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "morgan": "^1.10.0",
-    "nodemailer": "^7.0.6"
+    "nodemailer": "^7.0.6",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -46,6 +50,8 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.5",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.6",
     "concurrently": "^8.2.2",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.2",

@@ -22,6 +22,7 @@ A Node.js microservice architecture with an API Gateway as the entry point to ac
 ## Services
 
 ### 1. API Gateway (Port 3000)
+
 - Entry point for all client requests
 - Routes requests to appropriate microservices
 - Handles load balancing and service discovery
@@ -29,16 +30,19 @@ A Node.js microservice architecture with an API Gateway as the entry point to ac
 - Implements rate limiting and security
 
 ### 2. User Service (Port 3001)
+
 - User management and authentication
 - Endpoints: `/api/users`, `/api/auth`
 - Features: CRUD operations, login/register
 
 ### 3. Product Service (Port 3002)
+
 - Product catalog management
 - Endpoints: `/api/products`, `/api/categories`
 - Features: Product CRUD, category management, search/filter
 
 ### 4. Order Service (Port 3003)
+
 - Order and payment processing
 - Endpoints: `/api/orders`, `/api/payments`
 - Features: Order management, payment processing
@@ -46,35 +50,50 @@ A Node.js microservice architecture with an API Gateway as the entry point to ac
 ## Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
 - npm or yarn
+- MongoDB (running locally or via Docker)
 - Docker (optional)
 
 ### Installation
 
 1. **Clone and install dependencies:**
+
 ```bash
 npm install
 ```
 
-2. **Start all services:**
-```bash
-# Start gateway
-npm run start:gateway
+2. **Set up environment variables:**
 
-# In separate terminals, start services
-npm run start:service
+```bash
+# Create .env file with the following variables:
+MONGODB_URI=mongodb://localhost:27017/microservice_db
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-this-in-production
+GATEWAY_PORT=3000
+AUTH_SERVICE_PORT=12004
+USER_SERVICE_PORT=12001
+```
+
+3. **Start all services:**
+
+```bash
+# Start all services with environment variables
+MONGODB_URI="mongodb://localhost:27017/microservice_db" JWT_SECRET="your-super-secret-jwt-key-change-this-in-production" JWT_REFRESH_SECRET="your-super-secret-refresh-key-change-this-in-production" npm run dev:all
 ```
 
 ### Using Docker
 
 1. **Build and start all services:**
+
 ```bash
 npm run docker:build
 npm run docker:up
 ```
 
 2. **Stop services:**
+
 ```bash
 npm run docker:down
 ```
@@ -126,16 +145,19 @@ npm run docker:down
 ## Testing the API
 
 ### 1. Check Gateway Health
+
 ```bash
 curl http://localhost:3000/health
 ```
 
 ### 2. Get API Documentation
+
 ```bash
 curl http://localhost:3000/api
 ```
 
 ### 3. Test User Service through Gateway
+
 ```bash
 # Get all users
 curl http://localhost:3000/api/users
@@ -147,6 +169,7 @@ curl -X POST http://localhost:3000/api/users \
 ```
 
 ### 4. Test Product Service through Gateway
+
 ```bash
 # Get all products
 curl http://localhost:3000/api/products
@@ -158,6 +181,7 @@ curl -X POST http://localhost:3000/api/products \
 ```
 
 ### 5. Test Order Service through Gateway
+
 ```bash
 # Get all orders
 curl http://localhost:3000/api/orders
@@ -171,6 +195,7 @@ curl -X POST http://localhost:3000/api/orders \
 ## Development
 
 ### Project Structure
+
 ```
 microservice/
 ├── gateway/
@@ -210,6 +235,7 @@ cp config.env .env
 ```
 
 Key variables:
+
 - `GATEWAY_PORT` - Gateway port (default: 3000)
 - `USER_SERVICE_URL` - User service URL
 - `PRODUCT_SERVICE_URL` - Product service URL

@@ -5,7 +5,7 @@ export interface IUser {
   lastName: string;
   email: string;
   password: string;
-  role: 'user';
+  role: "user";
   avatar?: string;
   addresses: IAddress[];
   isActive?: boolean;
@@ -19,7 +19,7 @@ export interface IStaff {
   lastName: string;
   email: string;
   password: string;
-  role: 'admin' | 'manager' | 'employee' | 'owner';
+  role: "admin" | "manager" | "employee" | "owner";
   avatar?: string;
   workingStore: IStore[];
   managedStore: IStore[];
@@ -36,7 +36,7 @@ export interface IAddress {
   zipCode?: string;
   country?: string;
   isDefault?: boolean;
-  addressType?: 'home' | 'work' | 'billing' | 'shipping';
+  addressType?: "home" | "work" | "billing" | "shipping";
 }
 
 export interface IStore {
@@ -91,12 +91,10 @@ export interface IRegisterResponse {
 
 // JWT Token Types
 export interface IJWTPayload {
-  id: string;
+  userId: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  userType: "user" | "staff";
   role: string;
-  userType: 'customer' | 'staff';
 }
 
 // API Response Types
