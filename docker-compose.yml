@@ -1,50 +1,21 @@
-version: '12.8'
-
+version: "3.9"
 services:
   gateway:
-    build:
-      context: .
-      dockerfile: gateway/Dockerfile
+    build: ./gateway
     ports:
       - "12000:12000"
     environment:
-      - NODE_ENV=production
-      - GATEWAY_PORT=12000
-      - AUTH_SERVICE_URL=http://auth-service:12004
-      - USER_SERVICE_URL=http://user-service:12001
+      - AUTH_SERVICE_URL=http://localhost:12004
     depends_on:
       - auth-service
-      - user-service
-    networks:
-      - microservice-network
 
   auth-service:
-    build:
-      context: .
-      dockerfile: services/auth-service/Dockerfile
+    build: ./auth-service
     ports:
       - "12004:12004"
-    environment:
-      - NODE_ENV=production
-      - AUTH_SERVICE_PORT=12004
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-    networks:
-      - microservice-network
-
-  user-service:
-    build:
-      context: .
-      dockerfile: services/user-service/Dockerfile
-    ports:
-      - "12001:12001"
-    environment:
-      - NODE_ENV=production
-      - USER_SERVICE_PORT=12001
-    networks:
-      - microservice-network
-
+    env_file:
+      - .env
 
 networks:
-  microservice-network:
+  default:
     driver: bridge
