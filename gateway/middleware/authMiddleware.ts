@@ -1,17 +1,19 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { IJWTPayload } from "../../types";
 
 // Extend Express Request interface
 declare global {
   namespace Express {
     interface Request {
-      user?: IJWTPayload;
+      user?: {
+        userId: string;
+        email: string;
+      };
     }
   }
 }
 
-// Authentication middleware for gateway
+// Authentication middleware
 export const authenticateToken = (
   req: Request,
   res: Response,
@@ -28,7 +30,10 @@ export const authenticateToken = (
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as IJWTPayload;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key") as {
+      userId: string;
+      email: string;
+    };
     req.user = decoded;
     next();
   } catch (error) {
@@ -39,48 +44,3 @@ export const authenticateToken = (
   }
 };
 
-// Staff middleware
-export const requireStaff = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Response | void => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required",
-    });
-  }
-
-  if (req.user.userType !== "staff") {
-    return res.status(403).json({
-      success: false,
-      message: "Staff access required",
-    });
-  }
-
-  next();
-};
-
-// Admin staff middleware
-export const requireAdminStaff = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Response | void => {
-  if (!req.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required",
-    });
-  }
-
-  if (req.user.userType !== "staff" || req.user.role !== "admin") {
-    return res.status(403).json({
-      success: false,
-      message: "Admin staff access required",
-    });
-  }
-
-  next();
-};

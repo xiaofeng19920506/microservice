@@ -6,7 +6,7 @@ A Node.js microservice architecture with an API Gateway as the entry point to ac
 
 ```
 ┌─────────────────┐
-│   API Gateway   │  ← Entry point (Port 3000)
+│   API Gateway   │  ← Entry point (Port 12000)
 │   (Express)     │
 └─────────┬───────┘
           │
@@ -21,7 +21,7 @@ A Node.js microservice architecture with an API Gateway as the entry point to ac
 
 ## Services
 
-### 1. API Gateway (Port 3000)
+### 1. API Gateway (Port 12000)
 
 - Entry point for all client requests
 - Routes requests to appropriate microservices
@@ -71,7 +71,7 @@ npm install
 MONGODB_URI=mongodb://localhost:27017/microservice_db
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-this-in-production
-GATEWAY_PORT=3000
+GATEWAY_PORT=12000
 AUTH_SERVICE_PORT=12004
 USER_SERVICE_PORT=12001
 ```
@@ -100,7 +100,7 @@ npm run docker:down
 
 ## API Endpoints
 
-### Gateway (http://localhost:3000)
+### Gateway (http://localhost:12000)
 
 - `GET /health` - Gateway health check
 - `GET /api` - API documentation
@@ -147,23 +147,23 @@ npm run docker:down
 ### 1. Check Gateway Health
 
 ```bash
-curl http://localhost:3000/health
+curl http://localhost:12000/health
 ```
 
 ### 2. Get API Documentation
 
 ```bash
-curl http://localhost:3000/api
+curl http://localhost:12000/api
 ```
 
 ### 3. Test User Service through Gateway
 
 ```bash
 # Get all users
-curl http://localhost:3000/api/users
+curl http://localhost:12000/api/users
 
 # Create a new user
-curl -X POST http://localhost:3000/api/users \
+curl -X POST http://localhost:12000/api/users \
   -H "Content-Type: application/json" \
   -d '{"name": "John Doe", "email": "john@example.com", "role": "user"}'
 ```
@@ -172,10 +172,10 @@ curl -X POST http://localhost:3000/api/users \
 
 ```bash
 # Get all products
-curl http://localhost:3000/api/products
+curl http://localhost:12000/api/products
 
 # Create a new product
-curl -X POST http://localhost:3000/api/products \
+curl -X POST http://localhost:12000/api/products \
   -H "Content-Type: application/json" \
   -d '{"name": "New Product", "price": 99.99, "category": "Electronics", "stock": 10}'
 ```
@@ -184,10 +184,10 @@ curl -X POST http://localhost:3000/api/products \
 
 ```bash
 # Get all orders
-curl http://localhost:3000/api/orders
+curl http://localhost:12000/api/orders
 
 # Create a new order
-curl -X POST http://localhost:3000/api/orders \
+curl -X POST http://localhost:12000/api/orders \
   -H "Content-Type: application/json" \
   -d '{"userId": 1, "items": [{"productId": 1, "quantity": 2, "price": 99.99}]}'
 ```
@@ -236,7 +236,7 @@ cp config.env .env
 
 Key variables:
 
-- `GATEWAY_PORT` - Gateway port (default: 3000)
+- `GATEWAY_PORT` - Gateway port (default: 12000)
 - `USER_SERVICE_URL` - User service URL
 - `PRODUCT_SERVICE_URL` - Product service URL
 - `ORDER_SERVICE_URL` - Order service URL
