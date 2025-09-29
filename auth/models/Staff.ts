@@ -7,6 +7,13 @@ export interface IStaff extends Document {
   password: string;
   firstName?: string;
   lastName?: string;
+  phoneNumber?: string;
+  address?: {
+    streetAddress: string;
+    city: string;
+    stateProvince: string;
+    zipCode: string;
+  };
   role: 'staff' | 'admin'| 'owner'|'manager';
   managedStore?: Array<string>;
   workingStore?: Array<string>;
@@ -53,6 +60,33 @@ const staffSchema = new Schema<IStaff>({
     required: [true, 'Last name is required'],
     trim: true,
     maxlength: [50, 'Last name cannot exceed 50 characters']
+  },
+  phoneNumber: {
+    type: String,
+    trim: true,
+    match: [/^\+?[\d\s\-\(\)]+$/, 'Please enter a valid phone number']
+  },
+  address: {
+    streetAddress: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Street address cannot exceed 100 characters']
+    },
+    city: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'City cannot exceed 50 characters']
+    },
+    stateProvince: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'State/Province cannot exceed 50 characters']
+    },
+    zipCode: {
+      type: String,
+      trim: true,
+      maxlength: [20, 'Zip code cannot exceed 20 characters']
+    }
   },
   role: {
     type: String,

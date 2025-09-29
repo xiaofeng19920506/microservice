@@ -5,6 +5,33 @@ import { asyncHandler, AppError } from '../middleware/errorHandler';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/auth/confirm-email:
+ *   post:
+ *     summary: Confirm email address
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: "abc123token"
+ *               isAdmin:
+ *                 type: boolean
+ *                 example: false
+ *     responses:
+ *       200:
+ *         description: Email confirmed
+ *       400:
+ *         description: Invalid token
+ */
 router.post('/confirm-email', asyncHandler(async (req: Request, res: Response) => {
   const { token, isAdmin } = req.body;
   if (!token) {

@@ -7,6 +7,22 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
 router.get('/me', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   let user: any;
   if (req.user!.modelType === 'staff') {
@@ -22,6 +38,8 @@ router.get('/me', authenticateToken, asyncHandler(async (req: AuthenticatedReque
     email: user.email,
     firstName: user.firstName,
     lastName: user.lastName,
+    phoneNumber: user.phoneNumber,
+    address: user.address,
     role: user.role,
     isEmailVerified: user.isEmailVerified,
     lastLogin: user.lastLogin,

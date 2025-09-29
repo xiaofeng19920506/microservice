@@ -75,7 +75,18 @@ const createServiceProxy = (serviceName: keyof typeof gatewayConfig.services) =>
 // Auth Service Routes
 router.use('/auth', createServiceProxy('auth'));
 
-// Service-specific health checks
+/**
+ * @swagger
+ * /api/services/health:
+ *   get:
+ *     summary: Service health status
+ *     tags: [API]
+ *     responses:
+ *       200:
+ *         description: Service health retrieved
+ *       500:
+ *         description: Failed to check health
+ */
 router.get('/services/health', async (req, res) => {
   try {
     const { getAllServicesHealth } = await import('../config');
@@ -93,7 +104,16 @@ router.get('/services/health', async (req, res) => {
   }
 });
 
-// API Info endpoint
+/**
+ * @swagger
+ * /api:
+ *   get:
+ *     summary: API information
+ *     tags: [API]
+ *     responses:
+ *       200:
+ *         description: API information retrieved
+ */
 router.get('/', (req, res) => {
   res.json({
     message: 'Microservice API Gateway',

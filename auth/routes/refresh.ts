@@ -7,6 +7,32 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 example: "refresh123token"
+ *     responses:
+ *       200:
+ *         description: Token refreshed
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Invalid token
+ */
 router.post('/refresh', asyncHandler(async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {

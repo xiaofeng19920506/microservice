@@ -8,6 +8,29 @@ import { AppError, asyncHandler } from '../middleware/errorHandler';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: User logout
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *                 example: "refresh123token"
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       401:
+ *         description: Unauthorized
+ */
 router.post('/logout', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { refreshToken } = req.body;
   if (refreshToken) {

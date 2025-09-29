@@ -85,11 +85,7 @@ const swaggerOptions = {
     info: {
       title: 'Microservice API Gateway',
       version: '1.0.0',
-      description: 'API Gateway for microservice architecture',
-      contact: {
-        name: 'API Support',
-        email: 'support@example.com'
-      }
+      description: 'API Gateway for microservice architecture'
     },
     servers: [
       {
@@ -107,10 +103,22 @@ const swaggerOptions = {
       }
     }
   },
-  apis: ['./gateway/routes/api.ts', './auth/routes/auth.ts']
+  apis: [
+    './gateway/routes/api.ts', 
+    './auth/routes/register.ts',
+    './auth/routes/login.ts',
+    './auth/routes/confirmEmail.ts',
+    './auth/routes/refresh.ts',
+    './auth/routes/logout.ts',
+    './auth/routes/me.ts'
+  ]
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// Debug: Log the generated spec to see what endpoints are found
+console.log('Swagger spec generated with paths:', Object.keys((swaggerSpec as any).paths || {}));
+
 
 // Routes
 app.use('/health', healthCheck);
@@ -119,7 +127,6 @@ app.use('/api', apiRoutes);
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
   customSiteTitle: 'Microservice API Gateway Documentation'
 }));
 

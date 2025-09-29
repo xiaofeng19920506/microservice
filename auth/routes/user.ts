@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { User } from '../models/User';
+import { AuthenticatedRequest } from '../middleware/auth';
 import { authenticateToken, authorizeRoles } from '../middleware/auth';
 import { asyncHandler, AppError } from '../middleware/errorHandler';
 
@@ -12,6 +13,13 @@ const router = Router();
  *     summary: Get all users
  *     description: Retrieve a list of all users (admin only)
  *     tags: [Users]
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve a paginated list of users (admin only)
+ *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -19,46 +27,180 @@ const router = Router();
  *         name: page
  *         schema:
  *           type: integer
- *           minimum: 1
- *           default: 1
  *         description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           minimum: 1
- *           maximum: 100
- *           default: 10
  *         description: Number of users per page
  *       - in: query
  *         name: role
  *         schema:
  *           type: string
- *           enum: [user, admin, moderator]
- *         description: Filter by role
+ *         description: User role
  *       - in: query
- *         name: isActive
+ *         name: isEmailVerified
  *         schema:
  *           type: boolean
- *         description: Filter by active status
+ *         description: Email verified status
  *     responses:
  *       200:
- *         description: List of users retrieved successfully
+ *         description: List of users
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden
  */
-router.get('/', authenticateToken, authorizeRoles('admin'), asyncHandler(async (req: Request, res: Response) => {
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     description: Retrieve a specific user by ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   put:
+ *     summary: Update user
+ *     description: Update user profile or role/email verification status (admin only for role/email verification)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               isEmailVerified:
+ *                 type: boolean
+ *               role:
+ *                 type: string
+ *                 enum: [user, admin, moderator]
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: User not found
+ */
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     summary: Delete user
+ *     description: Delete a user account (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       400:
+ *         description: Cannot delete your own account
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+/**
+ * @swagger
+ * /api/users/{id}/activate:
+ *   patch:
+ *     summary: Activate user
+ *     description: Activate a user account (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User activated successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+/**
+ * @swagger
+ * /api/users/{id}/deactivate:
+ *   patch:
+ *     summary: Deactivate user
+ *     description: Deactivate a user account (admin only)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deactivated successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
+router.get('/', authenticateToken, authorizeRoles('admin'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const role = req.query.role as string;
-  const isActive = req.query.isActive as string;
+  const isEmailVerified = req.query.isEmailVerified as string;
 
   // Build filter
   const filter: any = {};
   if (role) filter.role = role;
-  if (isActive !== undefined) filter.isActive = isActive === 'true';
+  if (isEmailVerified !== undefined) filter.isEmailVerified = isEmailVerified === 'true';
 
   // Calculate skip
   const skip = (page - 1) * limit;
@@ -108,7 +250,7 @@ router.get('/', authenticateToken, authorizeRoles('admin'), asyncHandler(async (
  *       404:
  *         description: User not found
  */
-router.get('/:id', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
+router.get('/:id', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
   const user = await User.findById(id);
@@ -152,7 +294,7 @@ router.get('/:id', authenticateToken, asyncHandler(async (req: Request, res: Res
  *                 type: string
  *               lastName:
  *                 type: string
- *               isActive:
+ *               isEmailVerified:
  *                 type: boolean
  *               role:
  *                 type: string
@@ -167,9 +309,9 @@ router.get('/:id', authenticateToken, asyncHandler(async (req: Request, res: Res
  *       404:
  *         description: User not found
  */
-router.put('/:id', authenticateToken, asyncHandler(async (req: Request, res: Response) => {
+router.put('/:id', authenticateToken, asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
-  const { firstName, lastName, isActive, role } = req.body;
+  const { firstName, lastName, isEmailVerified, role } = req.body;
 
   const user = await User.findById(id);
   
@@ -182,17 +324,17 @@ router.put('/:id', authenticateToken, asyncHandler(async (req: Request, res: Res
     throw new AppError('Access denied', 403);
   }
 
-  // Only admin can change role and isActive status
+  // Only admin can change role and isEmailVerified status
   if (req.user!.role !== 'admin') {
-    if (role !== undefined || isActive !== undefined) {
-      throw new AppError('Access denied. Only admin can change role or active status.', 403);
+    if (role !== undefined || isEmailVerified !== undefined) {
+      throw new AppError('Access denied. Only admin can change role or email verification status.', 403);
     }
   }
 
   // Update user
   if (firstName !== undefined) user.firstName = firstName;
   if (lastName !== undefined) user.lastName = lastName;
-  if (isActive !== undefined) user.isActive = isActive;
+  if (isEmailVerified !== undefined) user.isEmailVerified = isEmailVerified;
   if (role !== undefined) user.role = role;
 
   await user.save();
@@ -229,7 +371,7 @@ router.put('/:id', authenticateToken, asyncHandler(async (req: Request, res: Res
  *       404:
  *         description: User not found
  */
-router.delete('/:id', authenticateToken, authorizeRoles('admin'), asyncHandler(async (req: Request, res: Response) => {
+router.delete('/:id', authenticateToken, authorizeRoles('admin'), asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
   const { id } = req.params;
 
   const user = await User.findById(id);
@@ -281,7 +423,7 @@ router.patch('/:id/activate', authenticateToken, authorizeRoles('admin'), asyncH
 
   const user = await User.findByIdAndUpdate(
     id,
-    { isActive: true },
+  { isEmailVerified: true },
     { new: true }
   );
   
@@ -326,7 +468,7 @@ router.patch('/:id/deactivate', authenticateToken, authorizeRoles('admin'), asyn
 
   const user = await User.findByIdAndUpdate(
     id,
-    { isActive: false },
+  { isEmailVerified: false },
     { new: true }
   );
   

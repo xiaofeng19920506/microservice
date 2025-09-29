@@ -1,12 +1,19 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import bcrypt from 'bcryptjs';
 
+import mongoose, { Document } from 'mongoose';
+import bcrypt from 'bcryptjs';
 export interface IUser extends Document {
   _id: string;
   email: string;
   password: string;
   firstName?: string;
   lastName?: string;
+  phoneNumber?: string;
+  address?: {
+    streetAddress: string;
+    city: string;
+    stateProvince: string;
+    zipCode: string;
+  };
   role: 'user';
   isEmailVerified: boolean;
   emailConfirmationToken?: string;
@@ -20,7 +27,7 @@ export interface IUser extends Document {
   removeRefreshToken(token: string): void;
 }
 
-const userSchema = new Schema<IUser>({
+const userSchema = new mongoose.Schema<IUser>({
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -44,6 +51,33 @@ const userSchema = new Schema<IUser>({
     type: String,
     trim: true,
     maxlength: [50, 'Last name cannot exceed 50 characters']
+  },
+  phoneNumber: {
+    type: String,
+    trim: true,
+    match: [/^\+?[\d\s\-\(\)]+$/, 'Please enter a valid phone number']
+  },
+  address: {
+    streetAddress: {
+      type: String,
+      trim: true,
+      maxlength: [100, 'Street address cannot exceed 100 characters']
+    },
+    city: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'City cannot exceed 50 characters']
+    },
+    stateProvince: {
+      type: String,
+      trim: true,
+      maxlength: [50, 'State/Province cannot exceed 50 characters']
+    },
+    zipCode: {
+      type: String,
+      trim: true,
+      maxlength: [20, 'Zip code cannot exceed 20 characters']
+    }
   },
   role: {
     type: String,
@@ -72,7 +106,7 @@ const userSchema = new Schema<IUser>({
 }, {
   timestamps: true,
   toJSON: {
-    transform: function(doc, ret: any) {
+  transform: function(doc: any, ret: any) {
       delete ret.password;
       delete ret.refreshTokens;
       delete ret.emailConfirmationToken;
@@ -87,12 +121,12 @@ const userSchema = new Schema<IUser>({
 userSchema.index({ role: 1 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+userSchema.pre('save', async function(this: IUser, next: (err?: Error) => void) {
   if (!this.isModified('password')) return next();
   
   try {
     const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
-    this.password = await bcrypt.hash(this.password, saltRounds);
+  this.password = await bcrypt.hash(this.password, saltRounds);
     next();
   } catch (error) {
     next(error as Error);
@@ -100,7 +134,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+userSchema.methods.comparePassword = async function(this: IUser, candidatePassword: string): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -109,7 +143,7 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Generate refresh token method
-userSchema.methods.generateRefreshToken = function(): string {
+userSchema.methods.generateRefreshToken = function(this: IUser): string {
   const token = Math.random().toString(36).substring(2, 15) + 
                 Math.random().toString(36).substring(2, 15);
   this.refreshTokens.push(token);
@@ -123,8 +157,8 @@ userSchema.methods.generateRefreshToken = function(): string {
 };
 
 // Remove refresh token method
-userSchema.methods.removeRefreshToken = function(token: string): void {
-  this.refreshTokens = this.refreshTokens.filter(t => t !== token);
+userSchema.methods.removeRefreshToken = function(this: IUser, token: string): void {
+  this.refreshTokens = this.refreshTokens.filter((t: string) => t !== token);
 };
 
 export const User = mongoose.model<IUser>('User', userSchema);
