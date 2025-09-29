@@ -73,85 +73,7 @@ const createServiceProxy = (serviceName: keyof typeof gatewayConfig.services) =>
 };
 
 // Auth Service Routes
-/**
- * @swagger
- * /api/auth:
- *   post:
- *     summary: User authentication
- *     description: Authenticate user and return JWT token
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Authentication successful
- *       401:
- *         description: Invalid credentials
- */
 router.use('/auth', createServiceProxy('auth'));
-
-// User Service Routes
-/**
- * @swagger
- * /api/users:
- *   get:
- *     summary: Get all users
- *     description: Retrieve a list of all users
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of users
- *       401:
- *         description: Unauthorized
- */
-router.use('/users', optionalAuth, createServiceProxy('user'));
-
-// Product Service Routes
-/**
- * @swagger
- * /api/products:
- *   get:
- *     summary: Get all products
- *     description: Retrieve a list of all products
- *     tags: [Products]
- *     responses:
- *       200:
- *         description: List of products
- */
-router.use('/products', createServiceProxy('product'));
-
-// Order Service Routes
-/**
- * @swagger
- * /api/orders:
- *   get:
- *     summary: Get all orders
- *     description: Retrieve a list of all orders
- *     tags: [Orders]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of orders
- *       401:
- *         description: Unauthorized
- */
-router.use('/orders', authenticateToken, createServiceProxy('order'));
-
-// Admin Routes (require admin role)
-router.use('/admin', authenticateToken, authorizeRoles('admin'), createServiceProxy('user'));
 
 // Service-specific health checks
 router.get('/services/health', async (req, res) => {
@@ -180,18 +102,6 @@ router.get('/', (req, res) => {
       auth: {
         url: getServiceUrl('auth'),
         endpoints: ['/api/auth/login', '/api/auth/register', '/api/auth/refresh']
-      },
-      user: {
-        url: getServiceUrl('user'),
-        endpoints: ['/api/users', '/api/users/:id']
-      },
-      product: {
-        url: getServiceUrl('product'),
-        endpoints: ['/api/products', '/api/products/:id', '/api/categories']
-      },
-      order: {
-        url: getServiceUrl('order'),
-        endpoints: ['/api/orders', '/api/orders/:id', '/api/payments']
       }
     },
     documentation: '/api-docs',

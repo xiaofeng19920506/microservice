@@ -13,7 +13,7 @@ const router = Router();
  * /api/auth/register:
  *   post:
  *     summary: Register a new user
- *     description: Create a new user account
+ *     description: Create a new user account using email and password
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -22,24 +22,23 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - username
  *               - email
  *               - password
  *             properties:
- *               username:
- *                 type: string
- *                 minLength: 3
- *                 maxLength: 30
  *               email:
  *                 type: string
  *                 format: email
+ *                 description: User's email address (will be used as username)
  *               password:
  *                 type: string
  *                 minLength: 6
+ *                 description: User's password
  *               firstName:
  *                 type: string
+ *                 description: User's first name (optional)
  *               lastName:
  *                 type: string
+ *                 description: User's last name (optional)
  *     responses:
  *       201:
  *         description: User registered successfully
@@ -49,14 +48,18 @@ const router = Router();
  *         description: User already exists
  */
 router.post('/register', asyncHandler(async (req: Request, res: Response) => {
-  const { username, email, password, firstName, lastName } = req.body;
+  const { email, password, firstName, lastName } = req.body;
+  
+  // Use email as username
+  const username = email;
+  
   // Check if user already exists
   const existingUser = await User.findOne({
     $or: [{ email }, { username }]
   });
 
   if (existingUser) {
-    throw new AppError('User with this email or username already exists', 409);
+    throw new AppError('User with this email already exists', 409);
   }
 
   // Create new user
@@ -118,7 +121,7 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
  * /api/auth/login:
  *   post:
  *     summary: User login
- *     description: Authenticate user and return JWT tokens
+ *     description: Authenticate user using email and password, return JWT tokens
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -133,8 +136,10 @@ router.post('/register', asyncHandler(async (req: Request, res: Response) => {
  *               email:
  *                 type: string
  *                 format: email
+ *                 description: User's email address (used as username)
  *               password:
  *                 type: string
+ *                 description: User's password
  *     responses:
  *       200:
  *         description: Login successful

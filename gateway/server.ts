@@ -4,7 +4,6 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
@@ -108,7 +107,7 @@ const swaggerOptions = {
       }
     }
   },
-  apis: ['./gateway/routes/*.ts', './gateway/server.ts']
+  apis: ['./gateway/routes/api.ts', './auth/routes/auth.ts']
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
