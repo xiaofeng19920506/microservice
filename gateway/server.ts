@@ -110,14 +110,12 @@ const swaggerOptions = {
     './auth/routes/confirmEmail.ts',
     './auth/routes/refresh.ts',
     './auth/routes/logout.ts',
-    './auth/routes/me.ts'
+    './auth/routes/me.ts',
+    './auth/routes/radarConfig.ts'
   ]
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
-// Debug: Log the generated spec to see what endpoints are found
-console.log('Swagger spec generated with paths:', Object.keys((swaggerSpec as any).paths || {}));
 
 
 // Routes
