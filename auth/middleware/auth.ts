@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { signAccessToken, verifyAccessToken, decodeToken, TokenPayload } from '../../shared/jwt';
 import { User } from '../models/User';
 import { Staff } from '../models/Staff';
 import { RefreshToken } from '../models/RefreshToken';
@@ -28,7 +28,7 @@ export const authenticateToken = async (
       throw new AppError('Access denied. No token provided.', 401);
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+  const decoded = verifyAccessToken(token, process.env.JWT_SECRET || 'fallback-secret');
     
     // Check if this is an admin request (staff)
     const isAdmin = req.headers['x-is-admin'] === 'true' || decoded.isAdmin;
@@ -50,7 +50,7 @@ export const authenticateToken = async (
       id: user._id.toString(),
       email: user.email,
       role: user.role,
-      isAdmin: isAdmin,
+  isAdmin: !!isAdmin,
       modelType: isAdmin ? 'staff' : 'user'
     };
 
@@ -90,7 +90,7 @@ export const optionalAuth = async (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+  const decoded = verifyAccessToken(token, process.env.JWT_SECRET || 'fallback-secret');
       const isAdmin = req.headers['x-is-admin'] === 'true' || decoded.isAdmin;
       
       let user: any;
@@ -105,7 +105,7 @@ export const optionalAuth = async (
           id: user._id.toString(),
           email: user.email,
           role: user.role,
-          isAdmin: isAdmin,
+          isAdmin: !!isAdmin,
           modelType: isAdmin ? 'staff' : 'user'
         };
       }

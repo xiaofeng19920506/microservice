@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
+import { signAccessToken, verifyAccessToken, decodeToken, TokenPayload } from '../../shared/jwt';
 import { gatewayConfig } from '../config';
 
 export interface AuthenticatedRequest extends Request {
@@ -29,7 +29,7 @@ export const authenticateToken = async (
       return;
     }
 
-    const decoded = jwt.verify(token, gatewayConfig.security.jwtSecret) as any;
+    const decoded = verifyAccessToken(token, gatewayConfig.security.jwtSecret);
     req.user = {
       id: decoded.id,
       email: decoded.email,
@@ -84,7 +84,7 @@ export const optionalAuth = async (
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, gatewayConfig.security.jwtSecret) as any;
+      const decoded = verifyAccessToken(token, gatewayConfig.security.jwtSecret);
       req.user = {
         id: decoded.id,
         email: decoded.email,
