@@ -1,13 +1,20 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-export interface IUser extends Document {
+export interface IStaff extends Document {
   _id: string;
   email: string;
   password: string;
   firstName?: string;
   lastName?: string;
-  role: 'user';
+  role: 'staff' | 'admin'| 'owner'|'manager';
+  managedStore?: Array<string>;
+  workingStore?: Array<string>;
+  isOwner?: boolean;
+  employeeId?: string;
+  position?: string;
+  hireDate?: Date;
+  salary?: number;
   isEmailVerified: boolean;
   emailConfirmationToken?: string;
   emailConfirmationExpires?: Date;
@@ -20,7 +27,7 @@ export interface IUser extends Document {
   removeRefreshToken(token: string): void;
 }
 
-const userSchema = new Schema<IUser>({
+const staffSchema = new Schema<IStaff>({
   email: {
     type: String,
     required: [true, 'Email is required'],
@@ -37,18 +44,53 @@ const userSchema = new Schema<IUser>({
   },
   firstName: {
     type: String,
+    required: [true, 'First name is required'],
     trim: true,
     maxlength: [50, 'First name cannot exceed 50 characters']
   },
   lastName: {
     type: String,
+    required: [true, 'Last name is required'],
     trim: true,
     maxlength: [50, 'Last name cannot exceed 50 characters']
   },
   role: {
     type: String,
-    enum: ['user'] as const,
-    default: 'user'
+    enum: ['staff', 'admin', 'owner', 'manager'] as const,
+    default: 'staff'
+  },
+  managedStore: [{
+    type: String,
+    trim: true
+  }],
+  workingStore: [{
+    type: String,
+    trim: true
+  }],
+  isOwner: {
+    type: Boolean,
+    default: false
+  },
+  employeeId: {
+    type: String,
+    unique: true,
+    sparse: true, // Allows multiple null values
+    trim: true,
+    uppercase: true,
+    maxlength: [20, 'Employee ID cannot exceed 20 characters']
+  },
+  position: {
+    type: String,
+    trim: true,
+    maxlength: [100, 'Position cannot exceed 100 characters']
+  },
+  hireDate: {
+    type: Date,
+    default: Date.now
+  },
+  salary: {
+    type: Number,
+    min: [0, 'Salary cannot be negative']
   },
   isEmailVerified: {
     type: Boolean,
@@ -84,11 +126,15 @@ const userSchema = new Schema<IUser>({
 });
 
 // Indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ role: 1 });
+staffSchema.index({ email: 1 });
+staffSchema.index({ role: 1 });
+staffSchema.index({ managedStore: 1 });
+staffSchema.index({ workingStore: 1 });
+staffSchema.index({ employeeId: 1 });
+staffSchema.index({ isOwner: 1 });
 
 // Hash password before saving
-userSchema.pre('save', async function(next) {
+staffSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
   try {
@@ -101,7 +147,7 @@ userSchema.pre('save', async function(next) {
 });
 
 // Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+staffSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
   try {
     return await bcrypt.compare(candidatePassword, this.password);
   } catch (error) {
@@ -110,7 +156,7 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Generate refresh token method
-userSchema.methods.generateRefreshToken = function(): string {
+staffSchema.methods.generateRefreshToken = function(): string {
   const token = Math.random().toString(36).substring(2, 15) + 
                 Math.random().toString(36).substring(2, 15);
   this.refreshTokens.push(token);
@@ -124,8 +170,8 @@ userSchema.methods.generateRefreshToken = function(): string {
 };
 
 // Remove refresh token method
-userSchema.methods.removeRefreshToken = function(token: string): void {
+staffSchema.methods.removeRefreshToken = function(token: string): void {
   this.refreshTokens = this.refreshTokens.filter(t => t !== token);
 };
 
-export const User = mongoose.model<IUser>('User', userSchema);
+export const Staff = mongoose.model<IStaff>('Staff', staffSchema);

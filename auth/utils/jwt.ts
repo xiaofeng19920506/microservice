@@ -2,9 +2,9 @@ import jwt from 'jsonwebtoken';
 
 export interface TokenPayload {
   id: string;
-  username: string;
   email: string;
-  role: string;
+  role: 'user' | 'staff' | 'admin' | 'owner' | 'manager';
+  isAdmin?: boolean;
 }
 
 export const generateAccessToken = (payload: TokenPayload): string => {

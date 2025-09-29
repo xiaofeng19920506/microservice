@@ -1,15 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
+import { Staff } from '../models/Staff';
 import { RefreshToken } from '../models/RefreshToken';
 import { AppError } from './errorHandler';
 
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
-    username: string;
     email: string;
     role: string;
+    isAdmin: boolean;
+    modelType: 'user' | 'staff';
   };
 }
 
@@ -28,17 +30,28 @@ export const authenticateToken = async (
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
     
-    // Verify user still exists and is active
-    const user = await User.findById(decoded.id).select('+isActive +role');
-    if (!user || !user.isActive) {
-      throw new AppError('User not found or inactive', 401);
+    // Check if this is an admin request (staff)
+    const isAdmin = req.headers['x-is-admin'] === 'true' || decoded.isAdmin;
+    
+    let user: any;
+    if (isAdmin) {
+      // Look up in Staff collection
+      user = await Staff.findById(decoded.id).select('+role');
+    } else {
+      // Look up in User collection
+      user = await User.findById(decoded.id).select('+role');
+    }
+    
+    if (!user) {
+      throw new AppError('User not found', 401);
     }
 
     req.user = {
       id: user._id.toString(),
-      username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      isAdmin: isAdmin,
+      modelType: isAdmin ? 'staff' : 'user'
     };
 
     next();
@@ -78,14 +91,22 @@ export const optionalAuth = async (
 
     if (token) {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-      const user = await User.findById(decoded.id).select('+isActive +role');
+      const isAdmin = req.headers['x-is-admin'] === 'true' || decoded.isAdmin;
       
-      if (user && user.isActive) {
+      let user: any;
+      if (isAdmin) {
+        user = await Staff.findById(decoded.id).select('+role');
+      } else {
+        user = await User.findById(decoded.id).select('+role');
+      }
+      
+      if (user) {
         req.user = {
           id: user._id.toString(),
-          username: user.username,
           email: user.email,
-          role: user.role
+          role: user.role,
+          isAdmin: isAdmin,
+          modelType: isAdmin ? 'staff' : 'user'
         };
       }
     }
@@ -120,17 +141,26 @@ export const verifyRefreshToken = async (
       throw new AppError('Invalid or expired refresh token', 401);
     }
 
-    // Check if user is still active
-    const user = await User.findById(tokenDoc.userId).select('+isActive');
-    if (!user || !user.isActive) {
-      throw new AppError('User account is inactive', 401);
+    const isAdmin = req.headers['x-is-admin'] === 'true';
+    
+    // Check if user still exists
+    let user: any;
+    if (isAdmin) {
+      user = await Staff.findById(tokenDoc.userId);
+    } else {
+      user = await User.findById(tokenDoc.userId);
+    }
+    
+    if (!user) {
+      throw new AppError('User account not found', 401);
     }
 
     req.user = {
       id: user._id.toString(),
-      username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      isAdmin: isAdmin,
+      modelType: isAdmin ? 'staff' : 'user'
     };
 
     next();
