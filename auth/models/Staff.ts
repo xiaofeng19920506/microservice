@@ -126,11 +126,9 @@ const staffSchema = new Schema<IStaff>({
 });
 
 // Indexes for better performance
-staffSchema.index({ email: 1 });
 staffSchema.index({ role: 1 });
 staffSchema.index({ managedStore: 1 });
 staffSchema.index({ workingStore: 1 });
-staffSchema.index({ employeeId: 1 });
 staffSchema.index({ isOwner: 1 });
 
 // Hash password before saving

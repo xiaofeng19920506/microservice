@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger } from './middleware/requestLogger';
-import { authRoutes } from './routes/auth';
+import authRoutes from './routes/auth';
 import { userRoutes } from './routes/user';
 import { healthRoutes } from './routes/health';
 
